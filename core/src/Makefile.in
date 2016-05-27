@@ -1,0 +1,147 @@
+
+.PHONY: clean
+
+DISABLE_NUMA=@NONUMA@
+ENABLE_DPDK=@DPDK@
+ENABLE_PSIO=@PSIO@
+ENABLE_PCAP=@PCAP@
+ENABLE_DPDKR=@DPDKR@
+
+### TARGET ###
+MTCP_LIB_DIR=../lib
+MTCP_LIB=libmtcp.a
+
+MTCP_HDR_DIR=../include
+MTCP_HDR = mtcp_api.h mos_api.h mtcp_epoll.h mtcp_util.h
+
+
+### GCC ###
+GCC = gcc
+GCC_OPT = -m64 -Wall -fPIC -DNEWEV -DNEWRB -DNEWPPEEK -fgnu89-inline
+
+#DBG_OPT = -DDBGMSG -DDBGFUNC -DSTREAM -DSTATE -DTSTAT -DAPP -DEPOLL
+#DBG_OPT = -DDBGMSG -DDBGFUNC -DSTREAM -DSTATE
+#DBG_OPT += -DPKTDUMP
+#DBG_OPT += -DDUMP_STREAM
+#GCC_OPT += -g -DNETSTAT -DINFO -DDBGERR -DDBGCERR
+GCC_OPT += -DNDEBUG -O3 -g -DNETSTAT -DINFO -DDBGERR -DDBGCERR
+GCC_OPT += $(DBG_OPT)
+
+ifeq ($V,) # no echo
+    export MSG=@echo
+    export HIDE=@
+else
+    export MSG=@\#
+    export HIDE=
+endif
+
+### LIBRARIES AND INCLUDES ###
+INC_DIR=./include
+INC= -I$(INC_DIR) -I$(INC_DIR)/bpf
+
+ifeq ($(shell uname), Darwin)
+GCC_OPT += -DDARWIN -Wno-deprecated -Dinline=''
+endif
+
+LIBS = -lpthread -lrt
+ifeq ($(DISABLE_NUMA), 1)
+GCC_OPT += -DDISABLE_NUMA
+LIBS += -lnuma
+endif
+
+ifeq ($(ENABLE_DPDK), 1)
+# DPDK LIBRARY and HEADER
+DPDK_INC=../../drivers/dpdk/include
+DPDK_LIB=../../drivers/dpdk/lib/
+# CFLAGS for DPDK-related compilation
+DPDK_MACHINE_FLAGS = $(shell cat $(DPDK_INC)/cflags.txt)
+INC += -DENABLE_DPDK ${DPDK_MACHINE_FLAGS} -I${DPDK_INC} -include $(DPDK_INC)/rte_config.h
+LIBS += -export-dynamic -L$(DPDK_LIB)
+endif
+
+ifeq ($(ENABLE_PSIO), 1)
+# PacketShader LIBRARY and HEADER
+PS_DIR=../../../io_engine/io_engine-2.0.38.2
+LIB_DIR = -L$(PS_DIR)/lib
+INC += -DENABLE_PSIO -I$(PS_DIR)/include
+LIBS += -lps
+endif
+
+ifeq ($(ENABLE_PCAP), 1)
+# PacketShader LIBRARY and HEADER
+GCC_OPT += -D__thread="" -DBE_RESILIENT_TO_PACKET_DROP
+INC += -DENABLE_PCAP
+LIBS += -lpcap
+endif
+
+ifeq ($(ENABLE_DPDKR), 1)
+## DPDK RING (VIRTUAL PORT)
+DPDK_INC=../../../ovs-l7/dpdk-2.0.0/x86_64-native-linuxapp-gcc/include
+DPDK_LIB=../../../ovs-l7/dpdk-2.0.0/x86_64-native-linuxapp-gcc/lib
+# CFLAGS for DPDK-related compilation
+#DPDK_MACHINE_FLAGS = $(shell cat $(DPDK_INC)/cflags.txt)
+INC += -DENABLE_DPDKR ${DPDK_MACHINE_FLAGS} -I${DPDK_INC} -include $(DPDK_INC)/rte_config.h
+INC += -I../../../ovs-l7/ovs -I/usr/include # dpdkr
+INC += -mssse3 # dpdkr
+LIBS += -export-dynamic -L$(DPDK_LIB)
+endif
+
+ifeq ($(wildcard /usr/lib/libhugetlbfs.so),) 
+else
+	GCC_OPT += -DHUGEPAGE
+endif
+
+### SOURCE CODE ###
+SRCS = core.c tcp_stream.c config.c api.c mos_api.c eventpoll.c socket.c pipe.c \
+	   tcp_util.c eth_in.c ip_in.c tcp.c tcp_in.c eth_out.c ip_out.c tcp_out.c \
+	   arp.c timer.c cpu.c util.c addr_pool.c fhash.c memory_mgt.c logger.c debug.c \
+	   tcp_rb_frag_queue.c tcp_ring_buffer.c tcp_send_buffer.c tcp_sb_queue.c tcp_stream_queue.c \
+	bpf/sf_bpf_filter.c bpf/sfbpf-int.c bpf/sf_gencode.c bpf/sf_grammar.c \
+	bpf/sf_nametoaddr.c bpf/sf_optimize.c bpf/sf_scanner.c \
+	event_callback.c tcp_rb.c icmp.c scalable_event.c key_value_store.c
+
+ifeq ($(ENABLE_DPDK), 1)
+SRCS += dpdk_module.c
+endif
+
+ifeq ($(ENABLE_PSIO), 1)
+SRCS += psio_module.c
+endif
+
+ifeq ($(ENABLE_PCAP), 1)
+SRCS += pcap_module.c
+endif
+
+ifeq ($(ENABLE_DPDKR), 1)
+SRCS += dpdkr_module.c
+endif
+
+OBJS = $(patsubst %.c,%.o,$(SRCS))
+DEPS = $(patsubst %.c,.%.d,$(SRCS))
+
+
+### GOALS ###
+default: $(OBJS)
+	mkdir -p $(MTCP_LIB_DIR)
+	$(MSG) "   AR $(MTCP_LIB)"
+	$(HIDE) ar rvs $(MTCP_LIB_DIR)/$(MTCP_LIB) $(OBJS)
+
+$(OBJS): %.o: %.c Makefile
+	$(MSG) "   CC $<"
+	$(HIDE) $(GCC) $(GCC_OPT) $(INC) -c $< -o $@
+$(DEPS): .%.d: %.c Makefile
+	@mkdir -p .bpf
+	$(MSG) "   CC $<"
+	$(HIDE) $(GCC) $(GCC_OPT) $(INC) -MM $(CFLAGS) $< > $@
+
+-include $(DEPS)
+
+clean: clean-library
+	rm -f *.o *~ core
+	rm -rf .*.d tags .bpf
+
+clean-library:
+	rm -f $(MTCP_LIB_DIR)/*
+
+tags:
+	find -name '*.c' -or -name '*.h' | xargs ctags

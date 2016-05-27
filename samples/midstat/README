@@ -1,0 +1,10 @@
+How To
+
+PCAP is only for single CPU core
+If you are using PCAP, then
+	$ make
+	$ ./midstat -c 1
+
+If you are using DPDK, then
+	$ make
+	$ ./midstat
