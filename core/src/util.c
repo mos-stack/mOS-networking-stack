@@ -24,7 +24,7 @@ BuildKeyCache(uint32_t *cache, int cache_len)
 #define NBBY 8 /* number of bits per byte */
 #endif
 
-	/* Both of DPDK and PSIO uses this key for hash calculation.
+	/* Both of DPDK and Netmap uses this key for hash calculation.
 	 * Do not change any single bit of this key. */
 	static const uint8_t key[] = {
 		 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
@@ -105,7 +105,7 @@ GetRSSCPUCore(in_addr_t sip, in_addr_t dip,
 
 	uint32_t masked = GetRSSHash(sip, dip, sp, dp) & RSS_BIT_MASK;
 
-#ifdef ENABLE_PSIO
+#ifdef ENABLE_NETMAP
 	static const uint32_t off[4] = {3, 1, -1, -3};
 	masked += off[masked & 0x3];
 #endif

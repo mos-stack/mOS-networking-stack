@@ -126,6 +126,8 @@ pcap_load_module_upper_half(void)
 		}
 		g_pcap_ctx.dev_name[i] = ent[i]->dev_name;
 	}
+
+	num_queues = 1;
 }
 /*----------------------------------------------------------------------------*/
 io_module_func pcap_module_func = {

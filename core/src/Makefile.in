@@ -3,9 +3,9 @@
 
 DISABLE_NUMA=@NONUMA@
 ENABLE_DPDK=@DPDK@
-ENABLE_PSIO=@PSIO@
 ENABLE_PCAP=@PCAP@
 ENABLE_DPDKR=@DPDKR@
+ENABLE_NETMAP=@NETMAP@
 
 ### TARGET ###
 MTCP_LIB_DIR=../lib
@@ -59,19 +59,15 @@ INC += -DENABLE_DPDK ${DPDK_MACHINE_FLAGS} -I${DPDK_INC} -include $(DPDK_INC)/rt
 LIBS += -export-dynamic -L$(DPDK_LIB)
 endif
 
-ifeq ($(ENABLE_PSIO), 1)
-# PacketShader LIBRARY and HEADER
-PS_DIR=../../../io_engine/io_engine-2.0.38.2
-LIB_DIR = -L$(PS_DIR)/lib
-INC += -DENABLE_PSIO -I$(PS_DIR)/include
-LIBS += -lps
-endif
-
 ifeq ($(ENABLE_PCAP), 1)
 # PacketShader LIBRARY and HEADER
 GCC_OPT += -D__thread="" -DBE_RESILIENT_TO_PACKET_DROP
 INC += -DENABLE_PCAP
 LIBS += -lpcap
+endif
+
+ifeq ($(ENABLE_NETMAP), 1)
+INC += -DENABLE_NETMAP
 endif
 
 ifeq ($(ENABLE_DPDKR), 1)
@@ -104,16 +100,16 @@ ifeq ($(ENABLE_DPDK), 1)
 SRCS += dpdk_module.c
 endif
 
-ifeq ($(ENABLE_PSIO), 1)
-SRCS += psio_module.c
-endif
-
 ifeq ($(ENABLE_PCAP), 1)
 SRCS += pcap_module.c
 endif
 
 ifeq ($(ENABLE_DPDKR), 1)
 SRCS += dpdkr_module.c
+endif
+
+ifeq ($(ENABLE_NETMAP), 1)
+SRCS += netmap_module.c
 endif
 
 OBJS = $(patsubst %.c,%.o,$(SRCS))

@@ -7,10 +7,6 @@
 /*----------------------------------------------------------------------------*/
 /* for type def'ns */
 #include <stdint.h>
-#ifdef ENABLE_PSIO
-/* for ps lib funcs */
-#include "ps.h"
-#endif
 /*----------------------------------------------------------------------------*/
 /**
  * Declaration to soothe down the warnings 
@@ -89,10 +85,10 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 #define MAX_DEVICES     16
 /* IO-MODULE string literals */
-#define PSIO_STR		"psio"
 #define DPDK_STR		"dpdk"
 #define DPDKR_STR		"dpdkr"
 #define PCAP_STR		"pcap"
+#define NETMAP_STR		"netmap"
 /* dev_ioctl related macros */
 #define PKT_TX_IP_CSUM		0x01
 #define PKT_TX_TCP_CSUM		0x02
@@ -100,12 +96,6 @@ typedef struct {
 
 /* enable shared RX/TX buffers */
 //#define SHARE_IO_BUFFER
-
-#ifdef ENABLE_PSIO
-/* registered psio context */
-extern io_module_func ps_module_func;
-struct ps_device devices[MAX_DEVICES];
-#endif
 
 #ifdef ENABLE_DPDK
 /* registered dpdk context */
@@ -118,6 +108,10 @@ extern io_module_func dpdkr_module_func;
 
 #ifdef ENABLE_PCAP
 extern io_module_func pcap_module_func;
+#endif
+
+#ifdef ENABLE_NETMAP
+extern io_module_func netmap_module_func;
 #endif
 /*----------------------------------------------------------------------------*/
 #endif /* !__IO_MODULE_H__ */

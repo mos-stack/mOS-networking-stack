@@ -94,7 +94,7 @@ GetRSSCPUCore(in_addr_t sip, in_addr_t dip,
 	#define RSS_BIT_MASK 0x0000007F
 	uint32_t masked = GetRSSHash(sip, dip, sp, dp) & RSS_BIT_MASK;
 
-#ifndef ENABLE_DPDK
+#ifdef ENABLE_NETMAP
 	static const uint32_t off[4] = {3, 1, -1, -3};
 	masked += off[masked & 0x3];
 #endif

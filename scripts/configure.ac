@@ -1,4 +1,4 @@
-AC_INIT([mos_release], version-0.1a, [ajamshed@ndsl.kaist.edu])
+AC_INIT([mos_release], version-0.3, [ajamshed@ndsl.kaist.edu])
 
 # Check for cc
 AC_PROG_CC
@@ -36,14 +36,25 @@ AC_CHECK_FUNCS([ftruncate gettimeofday memset strcasecmp strchr strpbrk strrchr 
 AC_SUBST(DPDK, 0)
 # Reset PSIO to 0
 AC_SUBST(PSIO, 0)
+# Reset Netmap to 0
+AC_SUBST(NETMAP, 0)
 
 # Enable dpdk
 AC_ARG_ENABLE([dpdk],
-	  AS_HELP_STRING([--enable-dpdk], [Enable dpdk-2.2.0]))
+	  AS_HELP_STRING([--enable-dpdk], [Enable dpdk-16.04]))
 
 AS_IF([test "x$enable_dpdk" = "xyes"], [
 	 dnl Do the stuff needed for enabling the feature
       	 AC_SUBST(DPDK, 1)
+])
+
+# Enable netmap
+AC_ARG_ENABLE([netmap],
+	  AS_HELP_STRING([--enable-netmap], [Enable netmap]))
+
+AS_IF([test "x$enable_netmap" = "xyes"], [
+	 dnl Do the stuff needed for enabling the feature
+      	 AC_SUBST(NETMAP, 1)
 ])
 
 # Enable psio
@@ -55,14 +66,15 @@ AS_IF([test "x$enable_psio" = "xyes"], [
       	 AC_SUBST(PSIO, 1)
 ])
 
-if test "$DPDK" == "0" && test "$PSIO" == "0"
+if test "$DPDK" == "0" && test "$PSIO" == "0" && test "$NETMAP" == "0"
 then
-        AC_MSG_ERROR([Packet I/O library is missing. Please set either dpdk or psio as your I/O lib.])
+        AC_MSG_ERROR([Packet I/O library is missing. Please set either dpdk, netmap or psio as your I/O lib.I am choosing pcap as your I/O lib!])
 fi
 
 AC_OUTPUT(../core/src/Makefile)
-AC_OUTPUT(../samples/flow_modifier/Makefile)
-AC_OUTPUT(../samples/flow_monitor/Makefile)
+AC_OUTPUT(../samples/epserver/Makefile)
+AC_OUTPUT(../samples/epwget/Makefile)
+AC_OUTPUT(../samples/midstat/Makefile)
 AC_OUTPUT(../samples/simple_firewall/Makefile)
 AC_OUTPUT(../samples/nat/Makefile)
 

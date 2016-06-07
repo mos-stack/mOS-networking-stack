@@ -31,10 +31,6 @@
 #include "tcp_stream.h"
 #include "io_module.h"
 
-#ifdef ENABLE_PSIO
-#include "ps.h"
-#endif
-
 #ifdef ENABLE_DPDK
 /* for launching rte thread */
 #include <rte_launch.h>
@@ -1782,6 +1778,8 @@ mtcp_init(const char *config_file)
 	current_iomodule_func = &pcap_module_func;
 #elif defined(ENABLE_DPDKR)
 	current_iomodule_func = &dpdkr_module_func;
+#elif defined(ENABLE_NETMAP)
+	current_iomodule_func = &netmap_module_func;
 #endif
 
 	if (current_iomodule_func->load_module_upper_half)

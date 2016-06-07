@@ -560,7 +560,10 @@ mtcp_getpeername(mctx_t mctx, int sock, struct sockaddr *saddr, socklen_t *addrl
  * (ii) then update the tcp payload accordingly (MOS_CHOMP or MOS_INSERT)
  *
  * MOS_DROP, MOS_OVERWRITE, MOS_CHOMP and MOS_INSERT are mutually 
- * exclusive operations
+ * exclusive operations.
+ *
+ * # At the moment, mtcp_setlastpkt() can only be used for updating #
+ * # packet as long as the overall TCP payload size remains the same. #
  */
 int
 mtcp_setlastpkt(mctx_t mctx, int sock, int side, off_t offset,

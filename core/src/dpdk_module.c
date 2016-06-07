@@ -559,8 +559,7 @@ dpdk_dev_ioctl(struct mtcp_thread_context *ctx, int nif, int cmd, void *argp)
 	switch (cmd) {
 	case PKT_TX_IP_CSUM:
 		m = dpc->wmbufs[nif].m_table[len_of_mbuf - 1];
-		m->ol_flags = PKT_TX_OUTER_IP_CKSUM |
-			PKT_TX_IP_CKSUM | PKT_TX_IPV4;
+		m->ol_flags = PKT_TX_IP_CKSUM | PKT_TX_IPV4;
 		m->l2_len = sizeof(struct ether_hdr);
 		m->l3_len = (iph->ihl<<2);
 		break;

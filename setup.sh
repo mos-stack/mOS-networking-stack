@@ -3,6 +3,7 @@
 ############################ Common Utilities ################################
 FL_PCAP=1
 FL_DPDK=2
+FL_NETMAP=3
 
 # vercomp returns 0 (=), 1 (>), or 2 (<)
 vercomp () {
@@ -90,8 +91,8 @@ create_config()
     if [[ $1 == $FL_DPDK ]]; then
 	cd /sys/module/igb_uio/drivers/pci:igb_uio/
 	DEV_NAME="dpdk"
-    elif [[ $1 != $FL_PCAP ]]; then
-	echo "invalid function call"
+    elif [[ ( $1 != $FL_PCAP ) && ( $1 != $FL_NETMAP ) ]]; then
+	echo "invalid function call 1"
 	exit 1
     fi
     for i in *
@@ -126,7 +127,39 @@ create_config()
 	sed -i -e 's/__coremask/0x0001/g' $CONF_FILE
 	sed -i -e 's/__num_memch//g' $CONF_FILE
 	sed -i -e 's/__forward/1/g' $CONF_FILE
-	
+
+    elif [[ $1 == $FL_NETMAP ]]; then
+	if [ "$3" = "epserver" ] || [ "$3" = "epwget" ] ; then
+	    cat .end-template.conf > $CONF_FILE
+	else
+	    cat .standalone-template.conf > $CONF_FILE
+	fi
+
+	DEVLIST=`ifconfig -s | grep -Eo '^[^ ]+' | tail -n+2`
+	for dev in $DEVLIST; do
+	    printf "Found $dev. Press y to select [y/N]: "
+	    read option
+	    if [[ "$option" == y* ]]; then
+		DEVICE="\n\t\t$dev"		    
+		DEVICEMASK="__coremask__devicemask"
+		FMT=$(printf 's/__devicemask/%s %s/g' $DEVICE $DEVICEMASK)
+		sed -i -e "$FMT" $CONF_FILE
+
+		DEVICE="$dev""__devicelist"
+		FMT=$(printf 's/__devicelist/ %s/g' $DEVICE)
+		sed -i -e "$FMT" $CONF_FILE
+	    fi
+	done
+	sed -i -e 's/__devicemask//g' $CONF_FILE
+	sed -i -e 's/__devicelist//g' $CONF_FILE
+	sed -i -e 's/__coremask/'$CPU_MASK'/g' $CONF_FILE
+	sed -i -e 's/__num_memch//g' $CONF_FILE
+	sed -i -e 's/__forward/1/g' $CONF_FILE	
+	sed -i -e 's/__app/'$3'/g' $CONF_FILE
+
+	if [ "$3" = "nat" ] ; then
+	    sed -i -e 's/\# tcp_tw_interval = 30/tcp_tw_interval = 30/g' $CONF_FILE
+	fi    	
     else
 	if [ "$3" = "epserver" ] || [ "$3" = "epwget" ] ; then
 	    cat .end-template.conf > $CONF_FILE
@@ -161,7 +194,7 @@ create_config()
 	    FMT=$(printf 's/__num_memch/%snb_mem_channels = %d%s/g' '# number of memory channels per socket [mandatory for DPDK]\n\t' $NUM_MEMCH '\n')
 	    sed -i -e "$FMT" $CONF_FILE
 	else
-	    echo "invalid function call"
+	    echo "invalid function call 2"
 	    exit 1
 	fi	
     fi
@@ -179,6 +212,8 @@ create_makefile()
 		FMT=$(printf 's/__IO_LIB_ARGS/LIBS    += -m64 -g -pthread -lrt -march=native -Wl,-export-dynamic -L..\/..\/drivers\/dpdk\/lib -Wl,-lnuma -Wl,-lmtcp -Wl,-lpthread -Wl,-lrt -Wl,-ldl -Wl,$(shell cat ..\/..\/drivers\/dpdk\/lib\/ldflags.txt)/g')
 	    elif [[ $1 == $FL_PCAP ]]; then
 		FMT=$(printf 's/__IO_LIB_ARGS/GCC_OPT += -D__thread="" -DBE_RESILIENT_TO_PACKET_DROP\\nINC += -DENABLE_PCAP\\nLIBS += -lpcap/g')
+	    elif [[ $1 == $FL_NETMAP ]]; then
+		FMT=$(printf 's/__IO_LIB_ARGS/GCC_OPT += -DENABLE_NETMAP/g')
 	    fi
 	    sed -i -e "$FMT" $CUR_DIR/samples/$d/Makefile
 	fi
@@ -201,6 +236,9 @@ setup_mos_library() {
     elif [[ $1 == $FL_PCAP ]]; then
     	cd $CUR_DIR/scripts/
 	./configure --enable-pcap
+    elif [[ $1 == $FL_NETMAP ]]; then
+    	cd $CUR_DIR/scripts/
+	./configure --enable-netmap
     fi
     cd $CUR_DIR/core/src
     make clean;make
@@ -556,6 +594,24 @@ step0_func_pcap()
 }
 #############################################################################
 
+############################## NETMAP #######################################
+step0_func_netmap()
+{
+    cd $CUR_DIR/samples
+    for d in * ; do
+	if [ -d $CUR_DIR/samples/$d/config ]; then
+	    create_config $FL_NETMAP "samples/$d/config" $d
+	fi
+    done
+    echo
+    echo "------------------------------------------------"
+    echo "Done with configuration file setup."
+    echo "Use the arp command to add static ARP entries"
+    echo "------------------------------------------------"
+    exit 1
+}
+#############################################################################
+
 ############################# Main Script ###################################
 export CUR_DIR=$PWD
 kerver=$(uname -r)
@@ -569,7 +625,7 @@ if [ "$1" == "--compile-dpdk" ]; then
     fi
     # Build and install DPDK library
     export DPDK_DIR="drivers/dpdk"
-    export RTE_SDK="drivers/dpdk-2.2.0"
+    export RTE_SDK="drivers/dpdk-16.04"
     export RTE_TARGET="x86_64-native-linuxapp-gcc"
     export DESTDIR="."
     echo
@@ -590,9 +646,12 @@ if [ "$1" == "--compile-dpdk" ]; then
 elif [ "$1" == "--compile-pcap" ]; then
     setup_mos_library $FL_PCAP
 
+elif [ "$1" == "--compile-netmap" ]; then
+    setup_mos_library $FL_NETMAP
+
 elif [ "$1" == "--run-dpdk" ]; then
     export DPDK_DIR="drivers/dpdk"
-    export RTE_SDK="drivers/dpdk-2.2.0"
+    export RTE_SDK="drivers/dpdk-16.04"
     export RTE_TARGET="x86_64-native-linuxapp-gcc"
     while [ 1 ]; do
 	clear
@@ -634,6 +693,18 @@ elif [ "$1" == "--run-pcap" ]; then
 	echo -n "Press enter to continue ..."; read
     done
 
+elif [ "$1" == "--run-netmap" ]; then
+    while [ 1 ]; do
+	clear
+	echo
+	echo "----------------------------------------------------------"
+	echo " Full setup (from start)"
+	echo "----------------------------------------------------------"
+	step0_func_netmap
+	echo
+	echo -n "Press enter to continue ..."; read
+    done
+
 elif [ "$1" == "--cleanup" ]; then
     find | grep mos.conf | xargs rm -f
     find | grep log__* | xargs rm -f
@@ -648,9 +719,11 @@ elif [ "$1" == "--cleanup" ]; then
     rm -f scripts/config.log scripts/config.status
 else
     echo "[error] please specify one of the following options"
-    echo "--compile-dpdk : compile and build mOS library with dpdk"
-    echo "--compile-pcap : compile and build mOS library with pcap"
-    echo "--run-dpdk     : setup environments and configurations for running applications with dpdk"
-    echo "--run-pcap     : setup environments and configurations for running applications with pcap"
-    echo "--cleanup      : delete all binaries, config and Makefiles"
+    echo "--compile-dpdk   : compile and build mOS library with dpdk"
+    echo "--compile-pcap   : compile and build mOS library with pcap"
+    echo "--compile-netmap : compile and build mOS library with netmap"
+    echo "--run-dpdk       : setup environments and configurations for running applications with dpdk"
+    echo "--run-pcap       : setup environments and configurations for running applications with pcap"
+    echo "--run-netmap     : setup environments and configurations for running applications with netmap"
+    echo "--cleanup        : delete all binaries, config and Makefiles"
 fi
