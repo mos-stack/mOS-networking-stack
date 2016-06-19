@@ -688,7 +688,8 @@ LIBDPDK_CFLAGS=""
 LIBDPDK_LIBS=""
 
 if test "$WITH_LIBDPDK" != "no"; then
-	LIBDPDK_CFLAGS="-I$WITH_LIBDPDK/include/"
+	DPDK_MACHINE_FLAGS=`cat $WITH_LIBDPDK/include/cflags.txt`
+	LIBDPDK_CFLAGS="$DPDK_MACHINE_FLAGS -I$WITH_LIBDPDK/include/"
 	LIBDPDK_LDFLAGS=`cat $WITH_LIBDPDK/lib/ldflags.txt`
 	LIBDPDK_LIBS="-L$WITH_LIBDPDK/lib/ -m64 -g -O3 -pthread -lrt -march=native -Wl,-export-dynamic -Wl,-lnuma -Wl,-lpthread -Wl,-lrt -Wl,-ldl -Wl,$LIBDPDK_LDFLAGS"
 	CFLAGS="${CFLAGS} ${LIBDPDK_CFLAGS}"
@@ -700,6 +701,18 @@ fi
 
 AC_SUBST(LIBDPDK_CFLAGS)
 AC_SUBST(LIBDPDK_LIBS)
+
+
+AC_MSG_CHECKING(for netmap support)
+AC_ARG_ENABLE(netmap,
+ AC_HELP_STRING([--enable-netmap],[Turn on Netmap support]),
+ [case "${enableval}" in
+   yes) CFLAGS="${CFLAGS} -DHAVE_NETMAP";;
+    no) ;;
+     *) AC_MSG_ERROR(bad value ${enableval} for --enable-lfs) ;;
+  esac],[CFLAGS="${CFLAGS}"
+	 enable_netmap=no])
+AC_MSG_RESULT($enableval)    
 
 dnl build version-id
 LIGHTTPD_VERSION_ID=`echo $PACKAGE_VERSION | $AWK -F '.' '{print "(" $1 " << 16 | " $2 " << 8 | " $3 ")"}'`

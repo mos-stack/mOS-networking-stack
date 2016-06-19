@@ -692,9 +692,10 @@ Handle_TCP_ST_LISTEN (mtcp_manager_t mtcp, tcp_stream* cur_stream,
 	const struct tcphdr* tcph = pctx->p.tcph;
 	
 	if (tcph->syn) {
+		if (cur_stream->state == TCP_ST_LISTEN)
+			cur_stream->rcv_nxt++;
 		cur_stream->state = TCP_ST_SYN_RCVD;
 		cur_stream->cb_events |= MOS_ON_TCP_STATE_CHANGE | MOS_ON_CONN_START;
-		cur_stream->rcv_nxt++;
 		TRACE_STATE("Stream %d: TCP_ST_SYN_RCVD\n", cur_stream->id);
 		cur_stream->actions |= MOS_ACT_SEND_CONTROL;
 		if (IS_STREAM_TYPE(cur_stream, MOS_SOCK_MONITOR_STREAM_ACTIVE)) {
@@ -1259,7 +1260,7 @@ UpdateRecvTCPContext(mtcp_manager_t mtcp, struct tcp_stream *cur_stream,
 	assert(cur_stream);
 	
 	/* Validate sequence. if not valid, ignore the packet */
-	if (cur_stream->state >= TCP_ST_SYN_RCVD) {
+	if (cur_stream->state > TCP_ST_SYN_RCVD) {
 		
 		ret = ValidateSequence(mtcp, cur_stream, pctx);
 		if (!ret) {
@@ -1322,7 +1323,11 @@ UpdateRecvTCPContext(mtcp_manager_t mtcp, struct tcp_stream *cur_stream,
 		break;
 
 	case TCP_ST_SYN_RCVD:
-		Handle_TCP_ST_SYN_RCVD(mtcp, cur_stream, pctx);
+		/* SYN retransmit implies our SYN/ACK was lost. Resend */
+		if (tcph->syn && pctx->p.seq == cur_stream->rcvvar->irs)
+			Handle_TCP_ST_LISTEN(mtcp, cur_stream, pctx);
+		else
+			Handle_TCP_ST_SYN_RCVD(mtcp, cur_stream, pctx);
 		break;
 
 	case TCP_ST_ESTABLISHED:
