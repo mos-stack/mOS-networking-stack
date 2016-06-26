@@ -289,9 +289,61 @@ netmap_load_module_upper_half(void)
 	}
 }
 /*----------------------------------------------------------------------------*/
+static void
+set_promisc(char *ifname)
+{
+	int fd, ret;
+	struct ifreq eth;
+
+	fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (fd == -1) {
+		TRACE_ERROR("Couldn't open socket!\n");
+		return;
+	}
+	strcpy(eth.ifr_name, ifname);
+	ret = ioctl(fd, SIOCGIFFLAGS, &eth);
+	if (ret == -1) {
+		TRACE_ERROR("Get ioctl for %s failed!\n",
+			    ifname);
+		close(fd);
+		return;
+	}
+
+	if (eth.ifr_flags & IFF_PROMISC) {
+		TRACE_ERROR("Interface %s is already set to "
+			    "promiscuous mode\n", ifname);
+		close(fd);
+		return;
+	}
+	eth.ifr_flags |= IFF_PROMISC;
+
+	ret = ioctl(fd, SIOCSIFFLAGS, &eth);
+	if (ret == -1) {
+		TRACE_ERROR("Set ioctl failed for %s\n", ifname);
+		close(fd);
+		return;
+	}
+
+	close(fd);
+	
+}
+/*----------------------------------------------------------------------------*/
+void
+netmap_load_module_lower_half(void)
+{
+	struct netdev_entry **ent;
+	int j;
+
+	ent = g_config.mos->netdev_table->ent;
+	
+	for (j = 0; j < g_config.mos->netdev_table->num; j++) {
+		set_promisc(ent[j]->dev_name);		
+	}
+}
+/*----------------------------------------------------------------------------*/
 io_module_func netmap_module_func = {
 	.load_module_upper_half	   = netmap_load_module_upper_half,
-	.load_module_lower_half	   = NULL,
+	.load_module_lower_half	   = netmap_load_module_lower_half,
 	.init_handle		   = netmap_init_handle,
 	.link_devices		   = netmap_link_devices,
 	.release_pkt		   = netmap_release_pkt,
