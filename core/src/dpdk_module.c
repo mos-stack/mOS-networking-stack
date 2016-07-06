@@ -195,9 +195,9 @@ dpdk_init_handle(struct mtcp_thread_context *ctxt)
 #ifdef ENABLE_STATS_IOCTL
 	dpc->fd = open("/dev/dpdk-iface", O_RDWR);
 	if (dpc->fd == -1) {
-		TRACE_ERROR("Can't open /dev/dpdk-iface for context->cpu: %d!\n",
+		TRACE_ERROR("Can't open /dev/dpdk-iface for context->cpu: %d! "
+			    "Are you using mlx4/mlx5 driver?\n",
 			    ctxt->cpu);
-		exit(EXIT_FAILURE);
 	}
 #endif /* !ENABLE_STATS_IOCTL */
 }
@@ -230,13 +230,15 @@ dpdk_send_pkts(struct mtcp_thread_context *ctxt, int nif)
 #ifdef NETSTAT
 		mtcp->nstat.tx_packets[nif] += cnt;
 #ifdef ENABLE_STATS_IOCTL
-		ss.tx_pkts = mtcp->nstat.tx_packets[nif];
-		ss.tx_bytes = mtcp->nstat.tx_bytes[nif];
-		ss.rx_pkts = mtcp->nstat.rx_packets[nif];
-		ss.rx_bytes = mtcp->nstat.rx_bytes[nif];
-		ss.qid = ctxt->cpu;
-		ss.dev = nif;
-		ioctl(dpc->fd, 0, &ss);
+		if (likely(dpc->fd) >= 0) {
+			ss.tx_pkts = mtcp->nstat.tx_packets[nif];
+			ss.tx_bytes = mtcp->nstat.tx_bytes[nif];
+			ss.rx_pkts = mtcp->nstat.rx_packets[nif];
+			ss.rx_bytes = mtcp->nstat.rx_bytes[nif];
+			ss.qid = ctxt->cpu;
+			ss.dev = nif;
+			ioctl(dpc->fd, 0, &ss);
+		}
 #endif /* !ENABLE_STATS_IOCTL */
 #endif
 		do {
@@ -432,7 +434,8 @@ dpdk_destroy_handle(struct mtcp_thread_context *ctxt)
 
 #ifdef ENABLE_STATS_IOCTL
 	/* free fd */
-	close(dpc->fd);
+	if (dpc->fd >= 0)
+		close(dpc->fd);
 #endif /* !ENABLE_STATS_IOCTL */
 
 	/* free it all up */

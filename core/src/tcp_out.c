@@ -481,7 +481,7 @@ FlushTCPSendingBuffer(mtcp_manager_t mtcp, tcp_stream *cur_stream, uint32_t cur_
 		sndlen = SendTCPPacket(mtcp, cur_stream, cur_ts, 
 				TCP_FLAG_ACK, data, len);
 		if (sndlen < 0) {
-			packets = sndlen
+			packets = sndlen;
 			goto out;
 		}
 		packets++;
