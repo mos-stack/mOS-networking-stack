@@ -451,7 +451,7 @@ PrintStats()
 	fprintf(stderr, "[ ALL ] connect: %7lu, read: %4lu MB, write: %4lu MB, "
 			"completes: %7lu (resp_time avg: %4lu, max: %6lu us)\n", 
 			total.connects, 
-			total.reads / 1000 / 1000, total.writes / 1000 / 1000, 
+			total.reads / 1024 / 1024, total.writes / 1024 / 1024, 
 			total.completes, total_resp_time / core_limit, total.max_resp_time);
 }
 /*----------------------------------------------------------------------------*/
