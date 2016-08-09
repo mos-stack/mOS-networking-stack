@@ -842,7 +842,7 @@ RunMainLoop(struct mtcp_thread_context *ctx)
 	mtcp_manager_t mtcp = ctx->mtcp_manager;
 	int i;
 	int recv_cnt;
-	
+
 #if E_PSIO
 	int rx_inf, tx_inf;
 #endif
@@ -1093,7 +1093,9 @@ RunMainLoop(struct mtcp_thread_context *ctx)
 #ifdef RUN_ARP
 				ARPTimer(mtcp, ts);
 #endif
+#ifdef NETSTAT
 				PrintNetworkStats(mtcp, ts);
+#endif
 			}
 #endif /* NETSTAT */
 		}
