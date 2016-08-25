@@ -260,7 +260,6 @@ mtcp_setsockopt(mctx_t mctx, int sockid, int level,
 				return -1;
 			}
 #endif
-#ifdef NEWRB
 #ifdef DISABLE_DYN_RESIZE
 			if (*(int *)optval != 0)
 				return -1;
@@ -283,10 +282,6 @@ mtcp_setsockopt(mctx_t mctx, int sockid, int level,
 			return tcprb_resize(rb,
 					(((int)rb->metalen - 1) / UNITBUFSIZE + 1) * UNITBUFSIZE);
 #endif
-#else
-			errno = EBADF;
-			return -1;
-#endif
 		case MOS_SVRBUF:
 #if 0
 			if (socket->socktype != MOS_SOCK_MONITOR_STREAM_ACTIVE) {
@@ -294,7 +289,6 @@ mtcp_setsockopt(mctx_t mctx, int sockid, int level,
 				return -1;
 			}
 #endif
-#ifdef NEWRB
 #ifdef DISABLE_DYN_RESIZE
 			if (*(int *)optval != 0)
 				return -1;
@@ -317,10 +311,6 @@ mtcp_setsockopt(mctx_t mctx, int sockid, int level,
 			return tcprb_resize(rb,
 					(((int)rb->metalen - 1) / UNITBUFSIZE + 1) * UNITBUFSIZE);
 #endif
-#else
-			errno = EBADF;
-			return -1;
-#endif
 		case MOS_FRAG_CLIBUF:
 #if 0
 			if (socket->socktype != MOS_SOCK_MONITOR_STREAM_ACTIVE) {
@@ -328,7 +318,6 @@ mtcp_setsockopt(mctx_t mctx, int sockid, int level,
 				return -1;
 			}
 #endif
-#ifdef NEWRB
 #ifdef DISABLE_DYN_RESIZE
 			if (*(int *)optval != 0)
 				return -1;
@@ -349,10 +338,6 @@ mtcp_setsockopt(mctx_t mctx, int sockid, int level,
 			else
 				return -1;
 #endif
-#else
-			errno = EBADF;
-			return -1;
-#endif
 		case MOS_FRAG_SVRBUF:
 #if 0
 			if (socket->socktype != MOS_SOCK_MONITOR_STREAM_ACTIVE) {
@@ -360,7 +345,6 @@ mtcp_setsockopt(mctx_t mctx, int sockid, int level,
 				return -1;
 			}
 #endif
-#ifdef NEWRB
 #ifdef DISABLE_DYN_RESIZE
 			if (*(int *)optval != 0)
 				return -1;
@@ -380,10 +364,6 @@ mtcp_setsockopt(mctx_t mctx, int sockid, int level,
 				return tcprb_resize_meta(rb, *(int *)optval);
 			else
 				return -1;
-#endif
-#else
-			errno = EBADF;
-			return -1;
 #endif
 		case MOS_MONLEVEL:
 #ifdef OLD_API
@@ -474,11 +454,7 @@ mtcp_ioctl(mctx_t mctx, int sockid, int request, void *argp)
 
 	if (request == FIONREAD) {
 		tcp_stream *cur_stream;
-#ifdef NEWRB
 		tcprb_t *rbuf;
-#else
-		struct tcp_ring_buffer *rbuf;
-#endif
 
 		cur_stream = socket->stream;
 		if (!cur_stream) {
@@ -487,11 +463,7 @@ mtcp_ioctl(mctx_t mctx, int sockid, int request, void *argp)
 		}
 		
 		rbuf = cur_stream->rcvvar->rcvbuf;
-#ifdef NEWRB
 		*(int *)argp = (rbuf) ? tcprb_cflen(rbuf) : 0;
-#else
-		*(int *)argp = (rbuf) ? rbuf->merged_len : 0;
-#endif
 
 	} else if (request == FIONBIO) {
 		/* 
@@ -565,11 +537,7 @@ mtcp_monitor(mctx_t mctx, socket_map_t sock)
 	monitor->ude_id = UDE_OFFSET;
 #endif
 	monitor->socket = sock;
-#ifdef NEWRB
 	monitor->client_buf_mgmt = monitor->server_buf_mgmt = BUFMGMT_FULL;
-#else
-	monitor->client_buf_mgmt = monitor->server_buf_mgmt = 1;
-#endif
 
 	/* perform both sides monitoring by default */
 	monitor->client_mon = monitor->server_mon = 1;
@@ -1394,7 +1362,6 @@ CopyToUser(mtcp_manager_t mtcp, tcp_stream *cur_stream, char *buf, int len)
 {
 	struct tcp_recv_vars *rcvvar = cur_stream->rcvvar;
 	int copylen;
-#ifdef NEWRB
 	tcprb_t *rb = rcvvar->rcvbuf;
 	if ((copylen = tcprb_ppeek(rb, (uint8_t *)buf, len, rb->pile)) <= 0) {
 		errno = EAGAIN;
@@ -1404,19 +1371,6 @@ CopyToUser(mtcp_manager_t mtcp, tcp_stream *cur_stream, char *buf, int len)
 
 	rcvvar->rcv_wnd = rb->len - tcprb_cflen(rb);
 	//printf("rcv_wnd: %d\n", rcvvar->rcv_wnd);
-#else
-	copylen = MIN(rcvvar->rcvbuf->merged_len, len);
-	if (copylen <= 0) {
-		errno = EAGAIN;
-		return -1;
-	}
-
-	assert(rcvvar->rcvbuf->data);
-	/* Copy data to user buffer and remove it from receiving buffer */
-	memcpy(buf, rcvvar->rcvbuf->head, copylen);
-	RBRemove(mtcp->rbm_rcv, rcvvar->rcvbuf, copylen, AT_APP, cur_stream->buffer_mgmt);
-	rcvvar->rcv_wnd = rcvvar->rcvbuf->size - rcvvar->rcvbuf->merged_len;
-#endif
 
 	/* Advertise newly freed receive buffer */
 	if (cur_stream->need_wnd_adv) {
@@ -1485,11 +1439,7 @@ mtcp_read(mctx_t mctx, int sockid, char *buf, size_t len)
 
 	rcvvar = cur_stream->rcvvar;
 
-#ifdef NEWRB
 	merged_len = tcprb_cflen(rcvvar->rcvbuf);
-#else
-	merged_len = rcvvar->rcvbuf->merged_len;
-#endif
 
 	/* if CLOSE_WAIT, return 0 if there is no payload */
 	if (cur_stream->state == TCP_ST_CLOSE_WAIT) {
@@ -1512,12 +1462,7 @@ mtcp_read(mctx_t mctx, int sockid, char *buf, size_t len)
 
 	ret = CopyToUser(mtcp, cur_stream, buf, len);
 
-#ifdef NEWRB
 	merged_len = tcprb_cflen(rcvvar->rcvbuf);
-#else
-	merged_len = rcvvar->rcvbuf->merged_len;
-#endif
-
 	event_remaining = FALSE;
 	/* if there are remaining payload, generate EPOLLIN */
 	/* (may due to insufficient user buffer) */
@@ -1591,11 +1536,7 @@ mtcp_readv(mctx_t mctx, int sockid, struct iovec *iov, int numIOV)
 
 	rcvvar = cur_stream->rcvvar;
 
-#ifdef NEWRB
 	merged_len = tcprb_cflen(rcvvar->rcvbuf);
-#else
-	merged_len = rcvvar->rcvbuf->merged_len;
-#endif
 
 	/* if CLOSE_WAIT, return 0 if there is no payload */
 	if (cur_stream->state == TCP_ST_CLOSE_WAIT) {
@@ -1632,11 +1573,7 @@ mtcp_readv(mctx_t mctx, int sockid, struct iovec *iov, int numIOV)
 			break;
 	}
 
-#ifdef NEWRB
 	merged_len = tcprb_cflen(rcvvar->rcvbuf);
-#else
-	merged_len = rcvvar->rcvbuf->merged_len;
-#endif
 
 	event_remaining = FALSE;
 	/* if there are remaining payload, generate read event */

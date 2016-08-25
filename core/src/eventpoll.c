@@ -196,11 +196,7 @@ RaisePendingStreamEvents(mtcp_manager_t mtcp,
 	/* generate read event */
 	if (socket->epoll & MOS_EPOLLIN) {
 		struct tcp_recv_vars *rcvvar = stream->rcvvar;
-#ifdef NEWRB
 		if (rcvvar->rcvbuf && tcprb_cflen(rcvvar->rcvbuf) > 0) {
-#else
-		if (rcvvar->rcvbuf && rcvvar->rcvbuf->merged_len > 0) {
-#endif
 			TRACE_EPOLL("Socket %d: Has existing payloads\n", socket->id);
 			AddEpollEvent(ep, USR_SHADOW_EVENT_QUEUE, socket, MOS_EPOLLIN);
 		} else if (stream->state == TCP_ST_CLOSE_WAIT) {
@@ -528,7 +524,7 @@ AddEpollEvent(struct mtcp_epoll *ep,
 		int queue_type, socket_map_t socket, uint32_t event)
 {
 #ifdef DBGMSG
-	__PREPARE_DGBLOGGING();
+	__PREPARE_DBGLOGGING();
 #endif
 	struct event_queue *eq;
 	int index;

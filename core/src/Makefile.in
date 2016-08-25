@@ -17,7 +17,7 @@ MTCP_HDR = mtcp_api.h mos_api.h mtcp_epoll.h mtcp_util.h
 
 ### GCC ###
 GCC = gcc
-GCC_OPT = -m64 -Wall -fPIC -DNEWEV -DNEWRB -DNEWPPEEK -fgnu89-inline
+GCC_OPT = -m64 -Wall -fPIC -DNEWEV -fgnu89-inline
 
 #DBG_OPT = -DDBGMSG -DDBGFUNC -DSTREAM -DSTATE -DTSTAT -DAPP
 #DBG_OPT = -DDBGMSG -DDBGFUNC -DSTREAM -DSTATE
@@ -82,16 +82,11 @@ INC += -mssse3 # dpdkr
 LIBS += -export-dynamic -L$(DPDK_LIB)
 endif
 
-ifeq ($(wildcard /usr/lib/libhugetlbfs.so),) 
-else
-	GCC_OPT += -DHUGEPAGE
-endif
-
 ### SOURCE CODE ###
 SRCS = core.c tcp_stream.c config.c api.c mos_api.c eventpoll.c socket.c pipe.c \
 	   tcp_util.c eth_in.c ip_in.c tcp.c tcp_in.c eth_out.c ip_out.c tcp_out.c \
 	   arp.c timer.c cpu.c util.c addr_pool.c fhash.c memory_mgt.c logger.c debug.c \
-	   tcp_rb_frag_queue.c tcp_ring_buffer.c tcp_send_buffer.c tcp_sb_queue.c tcp_stream_queue.c \
+	   tcp_rb_frag_queue.c tcp_send_buffer.c tcp_sb_queue.c tcp_stream_queue.c \
 	bpf/sf_bpf_filter.c bpf/sfbpf-int.c bpf/sf_gencode.c bpf/sf_grammar.c \
 	bpf/sf_nametoaddr.c bpf/sf_optimize.c bpf/sf_scanner.c \
 	event_callback.c tcp_rb.c icmp.c scalable_event.c key_value_store.c

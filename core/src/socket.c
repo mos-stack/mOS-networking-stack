@@ -61,11 +61,7 @@ FreeMonStream(mtcp_manager_t mtcp, socket_map_t socket)
 	mstream->stream = NULL;
 	mstream->uctx = NULL;
 
-#ifdef NEWRB
 	mstream->peek_offset[0] = mstream->peek_offset[1] = 0;
-#else
-	memset(&mstream->monitor_read, 0, sizeof(mstream->monitor_read));
-#endif
 }
 /*---------------------------------------------------------------------------*/
 /**

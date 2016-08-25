@@ -575,11 +575,7 @@ ProcessTCPPayload(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 
 	/* allocate receive buffer if not exist */
 	if (!rcvvar->rcvbuf) {
-#ifdef NEWRB
 		rcvvar->rcvbuf = tcprb_new(mtcp->bufseg_pool, g_config.mos->rmem_size, cur_stream->buffer_mgmt);
-#else
-		rcvvar->rcvbuf = RBInit(mtcp->rbm_rcv, rcvvar->irs + 1, cur_stream->buffer_mgmt);
-#endif
 		if (!rcvvar->rcvbuf) {
 			TRACE_ERROR("Stream %d: Failed to allocate receive buffer.\n", 
 				    cur_stream->id);
@@ -603,7 +599,6 @@ ProcessTCPPayload(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 	
 	prev_rcv_nxt = cur_stream->rcv_nxt;
 
-#ifdef NEWRB
 	tcprb_t *rb = rcvvar->rcvbuf;
 	loff_t off = seq2loff(rb, pctx->p.seq, (rcvvar->irs + 1));
 	if (off >= 0) {
@@ -621,10 +616,7 @@ ProcessTCPPayload(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 		}
 	}
 	/* TODO: update monitor vars */
-#else
-	ret = RBPut(mtcp->rbm_rcv, cur_stream, pctx->p.payload, 
-		    (uint32_t)pctx->p.payloadlen, pctx->p.seq);
-#endif
+
 	/* 
 	 * error can pop up due to disabled buffered management
 	 * (only in monitor mode). In that case, ignore the warning 
@@ -635,7 +627,6 @@ ProcessTCPPayload(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 		
 	/* discard the buffer if the state is FIN_WAIT_1 or FIN_WAIT_2, 
 	   meaning that the connection is already closed by the application */
-#ifdef NEWRB
 	loff_t cftail = rb->pile + tcprb_cflen(rb);
 	if (cur_stream->state == TCP_ST_FIN_WAIT_1 || 
 	    cur_stream->state == TCP_ST_FIN_WAIT_2) {
@@ -650,16 +641,6 @@ ProcessTCPPayload(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 	}
 	assert(cftail - rb->pile >= 0);
 	rcvvar->rcv_wnd = rb->len - (cftail - rb->pile);
-#else
-	if (cur_stream->state == TCP_ST_FIN_WAIT_1 || 
-	    cur_stream->state == TCP_ST_FIN_WAIT_2) {
-		RBRemove(mtcp->rbm_rcv, 
-			 rcvvar->rcvbuf, rcvvar->rcvbuf->merged_len, AT_MTCP,
-			 cur_stream->buffer_mgmt);
-	}
-	cur_stream->rcv_nxt = rcvvar->rcvbuf->head_seq + rcvvar->rcvbuf->merged_len;
-	rcvvar->rcv_wnd = rcvvar->rcvbuf->size - rcvvar->rcvbuf->merged_len;
-#endif
 	
 	if (read_lock)
 		SBUF_UNLOCK(&rcvvar->read_lock);
@@ -1443,7 +1424,6 @@ inline void
 PreRecvTCPEventPrediction(mtcp_manager_t mtcp, struct pkt_ctx *pctx,
 			  struct tcp_stream *recvside_stream)
 {
-#ifdef NEWRB
 #define DOESOVERLAP(a1, a2, b1, b2) \
 	((a1 != b2) && (a2 != b1) && ((a1 > b2) != (a2 > b1)))
 
@@ -1460,15 +1440,5 @@ PreRecvTCPEventPrediction(mtcp_manager_t mtcp, struct pkt_ctx *pctx,
 				break;
 			}
 	}
-#else
-	/* Check whether this packet is retransmitted or not. */
-	struct tcp_ring_buffer *rcvbuf;
-	if (pctx->p.payloadlen > 0 && recvside_stream->rcvvar != NULL
-		&& (rcvbuf = recvside_stream->rcvvar->rcvbuf) != NULL
-	    && RBDoesOverlap(mtcp->rbm_rcv, rcvbuf, pctx->p.seq, pctx->p.payloadlen)) {
-		recvside_stream->cb_events |= MOS_ON_REXMIT;
-		TRACE_DBG("RETX!\n");
-	}
-#endif
 }
 /*----------------------------------------------------------------------------*/

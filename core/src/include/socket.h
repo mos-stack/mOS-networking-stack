@@ -84,15 +84,7 @@ struct mon_stream
 	 * offset that points to the monitoring stream offset.
 	 * This variable will eventually be moved to socket.
 	 */
-#ifdef NEWRB
 	loff_t peek_offset[MOS_SIDE_BOTH];
-#else
-	struct {
-		uint32_t head_offset[MOS_SIDE_BOTH];
-		uint8_t overlap[MOS_SIDE_BOTH];
-	} monitor_read;
-#endif
-
 	struct mon_listener *monitor_listener;
 
 #ifdef NEWEV

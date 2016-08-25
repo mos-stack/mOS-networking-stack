@@ -146,7 +146,6 @@ CreateMonitorStream(mtcp_manager_t mtcp, struct pkt_ctx* pctx,
 		 * buffer management, enable it (that's why the
 		 * need for the loop)
 		 */
-#ifdef NEWRB
 		uint8_t bm;
 		stream->status_mgmt = 0;
 		SOCKQ_FOREACH_START(walk, &stream->msocks) {
@@ -169,21 +168,6 @@ CreateMonitorStream(mtcp_manager_t mtcp, struct pkt_ctx* pctx,
 				stream->pair_stream->status_mgmt = 1;
 			}			
 		} SOCKQ_FOREACH_END;
-#else
-		SOCKQ_FOREACH_START(walk, &stream->msocks) {
-			if (walk->monitor_stream->monitor_listener->server_buf_mgmt) {
-				stream->buffer_mgmt = TRUE;
-				break;
-			}
-		} SOCKQ_FOREACH_END;
-		
-		SOCKQ_FOREACH_START(walk, &stream->pair_stream->msocks) {
-			if (walk->monitor_stream->monitor_listener->client_buf_mgmt) {
-				stream->pair_stream->buffer_mgmt = TRUE;
-				break;
-			}
-		} SOCKQ_FOREACH_END;
-#endif
 	}
 	
 	ParseTCPOptions(stream, pctx->p.cur_ts,
@@ -280,9 +264,7 @@ FillPacketContextTCPInfo(struct pkt_ctx *pctx, struct tcphdr * tcph)
 	pctx->p.seq = ntohl(tcph->seq);
 	pctx->p.ack_seq = ntohl(tcph->ack_seq);
 	pctx->p.window = ntohs(tcph->window);
-#ifdef NEWPPEEK
 	pctx->p.offset = 0;
-#endif
 	
 	return ;
 }
@@ -467,11 +449,9 @@ ProcessInTCPPacket(mtcp_manager_t mtcp, struct pkt_ctx *pctx)
 	if (cur_stream) {
 		cur_stream->cb_events = events;
 
-#ifdef NEWPPEEK
 		if (cur_stream->rcvvar && cur_stream->rcvvar->rcvbuf)
 			pctx->p.offset = (uint64_t)seq2loff(cur_stream->rcvvar->rcvbuf,
 					pctx->p.seq, cur_stream->rcvvar->irs + 1);
-#endif
 
 		if (IS_STREAM_TYPE(cur_stream, MOS_SOCK_STREAM))
 			HandleSockStream(mtcp, cur_stream, pctx);			

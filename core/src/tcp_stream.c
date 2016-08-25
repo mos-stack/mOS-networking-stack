@@ -118,22 +118,11 @@ TcpSeqChange(socket_map_t socket, uint32_t seq_drift, int side, uint32_t seqno)
 int
 GetFragInfo(socket_map_t sock, int side, void *optval, socklen_t *len) 
 {
-#ifdef NEWRB
-#ifndef NEWPPEEK
-	/* TODO: Implement this */
-	return -1;
-#endif
-#endif
 	struct tcp_stream *stream;
 
 	stream = NULL;
-#ifdef NEWPPEEK
 	if (!*len || ( *len % sizeof(tcpfrag_t) != 0))
 		goto frag_info_error;
-#else
-	if (*len != sizeof(struct fragment_ctx))
-		goto frag_info_error;
-#endif
 
 	if (side != MOS_SIDE_CLI && side != MOS_SIDE_SVR) {
 		TRACE_ERROR("Invalid side requested!\n");
@@ -149,8 +138,6 @@ GetFragInfo(socket_map_t sock, int side, void *optval, socklen_t *len)
 	/* First check if the tcp ring buffer even has anything */
 	if (stream->rcvvar != NULL &&
 	    stream->rcvvar->rcvbuf != NULL) {
-#ifdef NEWRB
-#ifdef NEWPPEEK
 		tcprb_t *rcvbuf = stream->rcvvar->rcvbuf;
 		struct tcp_ring_fragment *out = (struct tcp_ring_fragment *)optval;
 		int const maxout = *len;
@@ -168,18 +155,6 @@ GetFragInfo(socket_map_t sock, int side, void *optval, socklen_t *len)
 			out[*len].offset = 0;
 			out[*len].len = 0;
 		}
-#endif
-#else
-		struct tcp_ring_buffer *rcvbuf = stream->rcvvar->rcvbuf;
-		if (rcvbuf->fctx == NULL)
-			goto frag_info_error;
-		else {
-			optval = (void *)rcvbuf->fctx;
-			*len = rcvbuf->head_seq + 
-				(rcvbuf->tail_offset - 
-				 rcvbuf->head_offset);
-		}
-#endif
 	} else
 		goto frag_info_error;
 
@@ -222,20 +197,12 @@ GetBufInfo(socket_map_t sock, int side, void *optval, socklen_t *len)
 	if (stream != NULL &&
 	    stream->rcvvar != NULL &&
 	    stream->rcvvar->rcvbuf != NULL) {
-#ifdef NEWRB
 		tcprb_t *rcvbuf = stream->rcvvar->rcvbuf;
 		tcpfrag_t *f = TAILQ_LAST(&rcvbuf->frags, flist);
 		tbi->tcpbi_init_seq = stream->rcvvar->irs + 1;
 		tbi->tcpbi_last_byte_read = rcvbuf->pile;
 		tbi->tcpbi_next_byte_expected = rcvbuf->pile + tcprb_cflen(rcvbuf);
 		tbi->tcpbi_last_byte_received = (f ? f->tail : rcvbuf->head);
-#else
-		struct tcp_ring_buffer *rcvbuf = stream->rcvvar->rcvbuf;
-		tbi->tcpbi_init_seq = rcvbuf->init_seq;
-		tbi->tcpbi_last_byte_read = rcvbuf->head_seq;
-		tbi->tcpbi_next_byte_expected = rcvbuf->head_seq + rcvbuf->merged_len;
-		tbi->tcpbi_last_byte_received = rcvbuf->head_seq + rcvbuf->last_len;
-#endif
 	} else {
 		errno = ENODATA;
 		goto buf_info_error;
@@ -253,7 +220,7 @@ int
 DisableBuf(socket_map_t sock, int side)
 {
 #ifdef DBGMSG
-	__PREPARE_DGBLOGGING();
+	__PREPARE_DBGLOGGING();
 #endif
 	struct tcp_stream *stream;
 	int rc = 0;
@@ -290,7 +257,7 @@ int
 GetLastTimestamp(struct tcp_stream *stream, uint32_t *usecs, socklen_t *len)
 {
 #ifdef DBGMSG
-	__PREPARE_DGBLOGGING();
+	__PREPARE_DBGLOGGING();
 #endif
 	if (*len < sizeof(uint32_t)) {
 		TRACE_DBG("Size passed is not >= sizeof(uint32_t)!\n");
@@ -333,11 +300,7 @@ RaiseReadEvent(mtcp_manager_t mtcp, tcp_stream *stream)
 	if (HAS_STREAM_TYPE(stream, MOS_SOCK_STREAM)) {
 		if (stream->socket && (stream->socket->epoll & MOS_EPOLLIN))
 			AddEpollEvent(mtcp->ep, MOS_EVENT_QUEUE, stream->socket, MOS_EPOLLIN);
-#ifdef NEWRB
 	} else if (rcvvar->rcvbuf && tcprb_cflen(rcvvar->rcvbuf) > 0) {
-#else
-	} else if (rcvvar->rcvbuf && rcvvar->rcvbuf->merged_len) {
-#endif
 		/* 
 		 * in case it is a monitoring socket, queue up the read events
 		 * in the event_queue of only if the tcp_stream hasn't already
@@ -642,12 +605,7 @@ CreateTCPStream(mtcp_manager_t mtcp, socket_map_t socket, int type,
 
 	stream->rcvvar->snd_wl1 = stream->rcvvar->irs - 1;
 
-#ifdef NEWRB
 	stream->buffer_mgmt = BUFMGMT_FULL;
-#else
-	/* set tcp_ring_buffer management to `on' by default */
-	stream->buffer_mgmt = TRUE;
-#endif
 
 	/* needs state update by default */
 	stream->status_mgmt = 1;
@@ -920,12 +878,7 @@ DestroySingleTCPStream(mtcp_manager_t mtcp, tcp_stream *stream)
 		RemoveFromTimeoutList(mtcp, stream);
 
 	if (stream->rcvvar->rcvbuf) {
-#ifdef NEWRB
 		tcprb_del(stream->rcvvar->rcvbuf);
-#else
-		RBFree(mtcp->rbm_rcv, stream->rcvvar->rcvbuf, 
-		       stream->buffer_mgmt);
-#endif
 		stream->rcvvar->rcvbuf = NULL;
 	}
 
@@ -1075,18 +1028,7 @@ DumpStream(mtcp_manager_t mtcp, tcp_stream *stream)
 			"snd_wl1: %u, snd_wl2: %u\n", 
 			stream->rcv_nxt, rcvvar->irs, 
 			rcvvar->rcv_wnd, rcvvar->snd_wl1, rcvvar->snd_wl2);
-	if (rcvvar->rcvbuf) {
-#ifdef NEWRB
-		/* TODO: Implement this */
-#else
-		thread_printf(mtcp, mtcp->log_fp, 
-				"Receive buffer: init_seq: %u, head_seq: %u, "
-				"merged_len: %d, cum_len: %lu, last_len: %d, size: %d\n", 
-				rcvvar->rcvbuf->init_seq, rcvvar->rcvbuf->head_seq, 
-				rcvvar->rcvbuf->merged_len, rcvvar->rcvbuf->cum_len, 
-				rcvvar->rcvbuf->last_len, rcvvar->rcvbuf->size);
-#endif
-	} else {
+	if (!rcvvar->rcvbuf) {
 		thread_printf(mtcp, mtcp->log_fp, "Receive buffer: (null)\n");
 	}
 	thread_printf(mtcp, mtcp->log_fp, "last_ack_seq: %u, dup_acks: %u\n", 

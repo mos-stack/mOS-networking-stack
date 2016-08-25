@@ -285,7 +285,6 @@ mtcp_peek(mctx_t mctx, int msock, int side, char *buf, size_t len)
 	/* Check if the read was not just due to syn-ack recv */
 	if (cur_stream->rcvvar != NULL && 
 	    cur_stream->rcvvar->rcvbuf != NULL) {
-#ifdef NEWRB
 		tcprb_t *rcvbuf = cur_stream->rcvvar->rcvbuf;
 		loff_t *poff = &sock->monitor_stream->peek_offset[cur_stream->side];
 
@@ -299,42 +298,6 @@ mtcp_peek(mctx_t mctx, int msock, int side, char *buf, size_t len)
 		UNUSED(copylen);
 
 		return rc;
-#else
-		struct tcp_ring_buffer *rcvbuf;
-		uint32_t *monitor_read_head_offset_ptr;
-		uint8_t *overlap_ptr;
-		/* assign monitor-related ptrs */
-		rcvbuf = cur_stream->rcvvar->rcvbuf;
-		monitor_read_head_offset_ptr = &sock->monitor_stream->monitor_read.head_offset[cur_stream->side];
-		overlap_ptr = &sock->monitor_stream->monitor_read.overlap[cur_stream->side];
-				
-		/* 
-		 * if the head ptr is way back than monitor offset...
-		 * then head ptr has looped around.. use m_tail_offset as 
-		 * reference
-		 */
-		if (rcvbuf->head_offset + rcvbuf->merged_len <
-		    *monitor_read_head_offset_ptr)
-			copylen = MIN(rcvbuf->monitor_read_tail_offset - 
-						  *monitor_read_head_offset_ptr, 
-						  len);
-		/* 
-		 * if the head ptr is ahead of monitor offset...
-		 * then read till head + merged length
-		 */
-		else
-			copylen = MIN(rcvbuf->head_offset + 
-						  rcvbuf->merged_len - 
-						  *monitor_read_head_offset_ptr, 
-						  len);
-		memcpy(buf, rcvbuf->data + *monitor_read_head_offset_ptr, copylen);
-		*monitor_read_head_offset_ptr += copylen;
-		rc = copylen;
-		if (*overlap_ptr) {
-			*overlap_ptr = 0;
-			rc = -1;
-		}
-#endif
 	} else {
 		TRACE_DBG("Stream hasn't yet been initialized!\n");
 		rc = 0;
@@ -382,13 +345,8 @@ ExtractPayloadFromFrags(struct tcp_ring_buffer *rcvbuf, char *buf,
 /*----------------------------------------------------------------------------*/
 /* Please see in-code comments for description */
 ssize_t
-#ifdef NEWPPEEK
 mtcp_ppeek(mctx_t mctx, int msock, int side, 
 			  char *buf, size_t count, uint64_t off)
-#else
-mtcp_ppeek(mctx_t mctx, int msock, int side, 
-			  char *buf, size_t count, off_t seq_num)
-#endif
 {
 	mtcp_manager_t mtcp;
 	struct tcp_stream *cur_stream;
@@ -434,96 +392,8 @@ mtcp_ppeek(mctx_t mctx, int msock, int side,
 	/* Check if the read was not just due to syn-ack recv */
 	if (cur_stream->rcvvar != NULL && 
 	    cur_stream->rcvvar->rcvbuf != NULL) {
-#ifdef NEWRB
 		tcprb_t *rcvbuf = cur_stream->rcvvar->rcvbuf;
-#ifndef NEWPPEEK
-		loff_t off = seq2loff(rcvbuf, seq_num, cur_stream->rcvvar->irs + 1);
-#endif
 		return tcprb_ppeek(rcvbuf, (uint8_t *)buf, count, off);
-#else
-		struct tcp_ring_buffer *rcvbuf = cur_stream->rcvvar->rcvbuf;
-
-		/* Next calculate the lowest sequence number in ring buffer */
-		off_t lwst_seq_num = 0;
-		if (rcvbuf->monitor_read_tail_offset == 0) {
-			lwst_seq_num = rcvbuf->head_seq - rcvbuf->head_offset;
-		}
-		else {
-			lwst_seq_num = rcvbuf->head_seq -
-				(rcvbuf->head_offset +
-				 rcvbuf->monitor_read_tail_offset -
-				 rcvbuf->tail_offset);
-		}
-		/* 
-		 * if the requested payload is within the frags then 
-		 * copy the payload from frags (if possible)
-		 */
-		if (TCP_SEQ_BETWEEN(seq_num, rcvbuf->head_seq + rcvbuf->merged_len,
-							rcvbuf->head_seq + rcvbuf->last_len)) {
-			/* if no bytes copied... then return error */
-			if ((rc=ExtractPayloadFromFrags(rcvbuf, buf, count, seq_num)) == 0) {
-				errno = EAGAIN;
-				goto ppeek_error;
-			} else {
-				/* set count to the number of bytes actually copied */
-				count = rc;
-				/* function was a success.. record it! */
-				//rc = 0;
-			}	
-		} else if (TCP_SEQ_BETWEEN(seq_num, lwst_seq_num, rcvbuf->head_seq + rcvbuf->merged_len)) {
-			/*
-			 * else if the requested payload is on or before
-			 * the received data 
-			 */
-			
-			/* first go back to the starting offset */
-			int cpbytesleft;
-			off_t start;
-			int distance;
-
-			if (lwst_seq_num > seq_num) {
-				errno = EAGAIN;
-				goto ppeek_error;
-			} else
-				lwst_seq_num = seq_num;
-
-			start = 0;
-			distance = rcvbuf->head_seq - lwst_seq_num;
-			cpbytesleft = count;
-
-			/* if the distance is longer than the head_offset (needs a wrap-around) */
-			if (distance > rcvbuf->head_offset) {
-				/* first calculate the start offset */
-				start = rcvbuf->monitor_read_tail_offset - (distance - rcvbuf->head_offset);
-				/* get the bytes copy value for 1st part */
-				cpbytesleft = count - MIN(rcvbuf->monitor_read_tail_offset - start, count);
-				/* do the memcpy */
-				memcpy(buf, rcvbuf->data + start, 
-				       MIN(rcvbuf->monitor_read_tail_offset - start, count));
-				if (cpbytesleft == 0) {
-					rc = 0;
-				} else {
-					/* do the 2nd memcpy */
-					memcpy(buf + rcvbuf->monitor_read_tail_offset - start,
-					       rcvbuf->data, 
-					       MIN(distance - (rcvbuf->monitor_read_tail_offset - start), 
-							   cpbytesleft));
-					cpbytesleft = cpbytesleft - 
-						MIN(distance - (rcvbuf->monitor_read_tail_offset - start), 
-						    cpbytesleft);
-					count = count - cpbytesleft;
-				} 
-			} else { /* if the distance is shorter */
-				start = rcvbuf->head_offset - distance;
-				count = MIN(distance, count);
-				memcpy(buf, rcvbuf->data + start, MIN(distance, count));
-			}
-			rc = count;
-		} else {
-			errno = ERANGE;
-			goto ppeek_error;
-		}
-#endif
 	} else {
 		errno = EPERM;
 		goto ppeek_error;

@@ -379,11 +379,9 @@ SendTCPPacket(struct mtcp_manager *mtcp, tcp_stream *cur_stream,
 		struct tcp_stream *recvside_stream = cur_stream->pair_stream;
 		struct tcp_stream *sendside_stream = cur_stream;
 
-#ifdef NEWPPEEK
 		if (recvside_stream->rcvvar && recvside_stream->rcvvar->rcvbuf)
 			pctx.p.offset = (uint64_t)seq2loff(recvside_stream->rcvvar->rcvbuf,
 					pctx.p.seq, recvside_stream->rcvvar->irs + 1);
-#endif
 
 		UpdateMonitor(mtcp, sendside_stream, recvside_stream, &pctx, false);
 	}
@@ -721,7 +719,6 @@ WriteTCPACKList(mtcp_manager_t mtcp,
 					cur_stream->state == TCP_ST_TIME_WAIT) {
 				/* TIMEWAIT is possible since the ack is queued 
 				   at FIN_WAIT_2 */
-#ifdef NEWRB
 				tcprb_t *rb;
 				if ((rb = cur_stream->rcvvar->rcvbuf) &&
 					TCP_SEQ_LEQ(cur_stream->rcv_nxt,
@@ -729,15 +726,6 @@ WriteTCPACKList(mtcp_manager_t mtcp,
 						+ tcprb_cflen(rb))) {
 					to_ack = TRUE;
 				}
-#else
-				if (cur_stream->rcvvar->rcvbuf) {
-					if (TCP_SEQ_LEQ(cur_stream->rcv_nxt, 
-								cur_stream->rcvvar->rcvbuf->head_seq + 
-								cur_stream->rcvvar->rcvbuf->merged_len)) {
-						to_ack = TRUE;
-					}
-				}
-#endif
 			} else {
 				TRACE_DBG("Stream %u (%s): "
 						"Try sending ack at not proper state. "

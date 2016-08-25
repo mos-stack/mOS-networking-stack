@@ -443,15 +443,6 @@ FlushMonitorReadEvents(mtcp_manager_t mtcp)
 							       cur_stream->side, NULL, 
 							       MOS_ON_CONN_NEW_DATA);
 					} SOCKQ_FOREACH_END;
-#ifndef NEWRB
-					/* re-adjust tcp_ring_buffer now */
-					RBRemove(mtcp->rbm_rcv, cur_stream->rcvvar->rcvbuf,
-							cur_stream->rcvvar->rcvbuf->merged_len, 
-							AT_MTCP, cur_stream->buffer_mgmt);
-					cur_stream->rcvvar->rcv_wnd =
-						cur_stream->rcvvar->rcvbuf->size 
-						- 1 - cur_stream->rcvvar->rcvbuf->last_len;
-#endif
 				}
 				/* reset the actions now */
 				cur_stream->actions = 0;
@@ -1229,14 +1220,6 @@ InitializeMTCPManager(struct mtcp_thread_context* ctx)
 		CTRACE_ERROR("Failed to create send ring buffer.\n");
 		return NULL;
 	}
-#ifndef NEWRB
-	mtcp->rbm_rcv = RBManagerCreate(g_config.mos->rmem_size, g_config.mos->no_ring_buffers,
-					g_config.mos->max_concurrency);
-	if (!mtcp->rbm_rcv) {
-		CTRACE_ERROR("Failed to create recv ring buffer.\n");
-		return NULL;
-	}
-#endif
 
 	mtcp->smap = (socket_map_t)calloc(g_config.mos->max_concurrency, sizeof(struct socket_map));
 	if (!mtcp->smap) {

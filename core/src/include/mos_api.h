@@ -276,23 +276,11 @@ struct tcp_buf_info {
 	uint32_t tcpbi_last_byte_received;
 };
 
-#ifdef NEWPPEEK
 /** Structure to expose TCP ring buffer's fragment information. */
 struct tcp_ring_fragment {
 	uint64_t offset;
 	uint32_t len;
 };
-#else
-/** Structure to expose TCP ring buffer's fragment information. */
-struct tcp_ring_fragment {
-	/** TCP sequence number of the packet */
-	uint32_t seq_num;
-	/** TCP sequence number */
-	uint32_t len;
-	/** points the next fragment argument, NULL if it is the end of the list */
-	struct tcp_ring_fragment *next;
-};
-#endif
 
 /**
  * mOS tcp stream states.
@@ -478,13 +466,8 @@ mtcp_peek(mctx_t mctx, int sock, int side,
  * @param [in] seq_num: byte offset of the TCP bytestream (absolute offset: offset 0 = init_seq_num)
  * @return # of bytes actually read on success, -1 for error
  */
-#ifdef NEWPPEEK
 ssize_t mtcp_ppeek(mctx_t mctx, int sock, int side, 
 			  char *buf, size_t count, uint64_t off);
-#else
-ssize_t mtcp_ppeek(mctx_t mctx, int sock, int side, 
-		      char *buf, size_t count, off_t seq_num);
-#endif
 
 /* Use this macro to copy packets when mtcp_getlastpkt is called */
 #define MTCP_CB_GETCURPKT_CREATE_COPY
@@ -560,10 +543,7 @@ mtcp_getpeername(mctx_t mctx, int sock, struct sockaddr *saddr, socklen_t *addrl
  * (ii) then update the tcp payload accordingly (MOS_CHOMP or MOS_INSERT)
  *
  * MOS_DROP, MOS_OVERWRITE, MOS_CHOMP and MOS_INSERT are mutually 
- * exclusive operations.
- *
- * # At the moment, mtcp_setlastpkt() can only be used for updating #
- * # packet as long as the overall TCP payload size remains the same. #
+ * exclusive operations
  */
 int
 mtcp_setlastpkt(mctx_t mctx, int sock, int side, off_t offset,
