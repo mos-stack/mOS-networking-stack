@@ -49,7 +49,7 @@
 #endif /* DBGERR */
 
 #ifdef DBGMSG
-#define __PREPARE_DGBLOGGING()			\
+#define __PREPARE_DBGLOGGING()			\
 	struct mtcp_context mctx = {		\
 		.cpu = sched_getcpu(),		\
 	};						\

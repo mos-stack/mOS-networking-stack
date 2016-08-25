@@ -267,7 +267,7 @@ inline int
 RegCb(kvs_t *store, stree_t **pstree, event_t ev, callback_t cb)
 {
 #ifdef DBGMSG
-	__PREPARE_DGBLOGGING();
+	__PREPARE_DBGLOGGING();
 #endif
 	TRACE_DBG("/>>>>>> start <<<<<<\\\n");
 	stree_t *stree, *nstree;
@@ -519,7 +519,7 @@ inline int
 UnregCb(kvs_t *store, stree_t **pstree, event_t ev)
 {
 #ifdef DBGMSG
-	__PREPARE_DGBLOGGING();
+	__PREPARE_DBGLOGGING();
 #endif
 	TRACE_DBG("/>>>>>> start <<<<<<\\\n");
 	stree_t *stree, *nstree;
@@ -715,7 +715,7 @@ event_t
 mtcp_define_event(event_t event, filter_t filter, struct filter_arg *arg)
 {
 #ifdef DBGMSG
-	__PREPARE_DGBLOGGING();
+	__PREPARE_DBGLOGGING();
 #endif
 	tree_node_t *parent, *new, *walk;
 

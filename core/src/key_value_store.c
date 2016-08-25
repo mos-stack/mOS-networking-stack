@@ -54,7 +54,7 @@ int
 kvs_insert(kvs_t *ht, _key_t const key, void * const value)
 {
 #ifdef DBGMSG
-	__PREPARE_DGBLOGGING();
+	__PREPARE_DBGLOGGING();
 #endif
 	/* create an entry*/ 
 	int idx;
@@ -93,7 +93,7 @@ void *
 kvs_remove(kvs_t *ht, _key_t const key)
 {
 #ifdef DBGMSG
-	__PREPARE_DGBLOGGING();
+	__PREPARE_DBGLOGGING();
 #endif
 	struct kvs_entry *walk;
 	kvs_bucket_head *head;
@@ -117,7 +117,7 @@ void *
 kvs_search(kvs_t *ht, _key_t const key)
 {
 #ifdef DBGMSG
-	__PREPARE_DGBLOGGING();
+	__PREPARE_DBGLOGGING();
 #endif
 	TRACE_DBG("look for %lX from 0x%p..\n", key, ht);
 
