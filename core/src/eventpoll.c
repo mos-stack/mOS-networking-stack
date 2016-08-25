@@ -1,3 +1,4 @@
+#include "debug.h"
 #include <sys/queue.h>
 #include <unistd.h>
 #include <time.h>
@@ -10,7 +11,6 @@
 #include "eventpoll.h"
 #include "tcp_in.h"
 #include "pipe.h"
-#include "debug.h"
 #include "tcp_rb.h"
 #include "config.h"
 
@@ -527,6 +527,9 @@ inline int
 AddEpollEvent(struct mtcp_epoll *ep, 
 		int queue_type, socket_map_t socket, uint32_t event)
 {
+#ifdef DBGMSG
+	__PREPARE_DGBLOGGING();
+#endif
 	struct event_queue *eq;
 	int index;
 
@@ -572,9 +575,9 @@ AddEpollEvent(struct mtcp_epoll *ep,
 	eq->num_events++;
 
 	TRACE_EPOLL("Socket %d New event: %s, start: %u, end: %u, num: %u\n",
-			ep->events[index].sockid, 
-			EventToString(ep->events[index].ev.events), 
-			ep->start, ep->end, ep->num_events);
+			eq->events[index].sockid, 
+			EventToString(eq->events[index].ev.events), 
+			eq->start, eq->end, eq->num_events);
 
 	if (queue_type == USR_EVENT_QUEUE)
 		pthread_mutex_unlock(&ep->epoll_lock);

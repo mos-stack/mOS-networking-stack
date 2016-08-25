@@ -1,3 +1,4 @@
+#include "debug.h"
 #include <string.h>
 
 #include "config.h"
@@ -11,9 +12,7 @@
 #include "eventpoll.h"
 #include "ip_out.h"
 #include "timer.h"
-#include "debug.h"
 #include "tcp_rb.h"
-
 /*---------------------------------------------------------------------------*/
 char *state_str[] = {
 	"TCP_ST_CLOSED", 
@@ -253,6 +252,9 @@ GetBufInfo(socket_map_t sock, int side, void *optval, socklen_t *len)
 int
 DisableBuf(socket_map_t sock, int side)
 {
+#ifdef DBGMSG
+	__PREPARE_DGBLOGGING();
+#endif
 	struct tcp_stream *stream;
 	int rc = 0;
 
@@ -287,6 +289,9 @@ DisableBuf(socket_map_t sock, int side)
 int
 GetLastTimestamp(struct tcp_stream *stream, uint32_t *usecs, socklen_t *len)
 {
+#ifdef DBGMSG
+	__PREPARE_DGBLOGGING();
+#endif
 	if (*len < sizeof(uint32_t)) {
 		TRACE_DBG("Size passed is not >= sizeof(uint32_t)!\n");
 		return -1;

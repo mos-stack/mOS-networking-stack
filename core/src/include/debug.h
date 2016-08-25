@@ -1,6 +1,10 @@
 #ifndef __DEBUG_H_
 #define __DEBUG_H_
 
+#ifdef DBGMSG
+#define _GNU_SOURCE
+#include <sched.h>
+#endif
 #include <errno.h>
 #include <stdio.h>
 #include <assert.h>
@@ -45,6 +49,12 @@
 #endif /* DBGERR */
 
 #ifdef DBGMSG
+#define __PREPARE_DGBLOGGING()			\
+	struct mtcp_context mctx = {		\
+		.cpu = sched_getcpu(),		\
+	};						\
+							\
+	mtcp_manager_t mtcp = GetMTCPManager(&mctx);
 
 #define TRACE_DBG(f, m...) {\
 	thread_printf(mtcp, mtcp->log_fp, "[%10s:%4d] " \

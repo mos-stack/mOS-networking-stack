@@ -139,7 +139,7 @@ ValidateSequence(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 			/* check if it is to get window advertisement */
 			if (pctx->p.seq + 1 == cur_stream->rcv_nxt) {
 				TRACE_DBG("Window update request. (seq: %u, rcv_wnd: %u)\n", 
-						seq, cur_stream->rcvvar->rcv_wnd);
+						pctx->p.seq, cur_stream->rcvvar->rcv_wnd);
 				cur_stream->actions |= MOS_ACT_SEND_ACK_AGG;
 				return FALSE;
 
@@ -660,7 +660,6 @@ ProcessTCPPayload(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 	cur_stream->rcv_nxt = rcvvar->rcvbuf->head_seq + rcvvar->rcvbuf->merged_len;
 	rcvvar->rcv_wnd = rcvvar->rcvbuf->size - rcvvar->rcvbuf->merged_len;
 #endif
-	//printf("rcv_wnd: %d\n", rcvvar->rcv_wnd);
 	
 	if (read_lock)
 		SBUF_UNLOCK(&rcvvar->read_lock);
@@ -673,7 +672,7 @@ ProcessTCPPayload(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 	
 	TRACE_EPOLL("Stream %d data arrived. "
 		    "len: %d, ET: %u, IN: %u, OUT: %u\n", 
-		    cur_stream->id, payloadlen, 
+		    cur_stream->id, pctx->p.payloadlen, 
 		    cur_stream->socket? cur_stream->socket->epoll & MOS_EPOLLET : 0, 
 		    cur_stream->socket? cur_stream->socket->epoll & MOS_EPOLLIN : 0, 
 		    cur_stream->socket? cur_stream->socket->epoll & MOS_EPOLLOUT : 0);
@@ -1193,10 +1192,10 @@ Handle_TCP_ST_FIN_WAIT_2 (mtcp_manager_t mtcp, tcp_stream* cur_stream,
 	} else {
 		TRACE_DBG("Stream %d (TCP_ST_FIN_WAIT_2): No FIN. "
 				"seq: %u, ack_seq: %u, snd_nxt: %u, snd_una: %u\n", 
-				cur_stream->id, seq, ack_seq, 
+				cur_stream->id, pctx->p.seq, pctx->p.ack_seq, 
 				cur_stream->snd_nxt, cur_stream->sndvar->snd_una);
 #if DBGMSG
-		DumpIPPacket(mtcp, iph, ip_len);
+		DumpIPPacket(mtcp, pctx->p.iph, pctx->p.ip_len);
 #endif
 	}
 
@@ -1224,9 +1223,9 @@ Handle_TCP_ST_CLOSING (mtcp_manager_t mtcp, tcp_stream* cur_stream,
 #if DBGMSG
 			TRACE_DBG("Stream %d (TCP_ST_CLOSING): Not ACK of FIN. "
 				  "ack_seq: %u, snd_nxt: %u, snd_una: %u, fss: %u\n", 
-				  cur_stream->id, ack_seq, cur_stream->snd_nxt, 
+				  cur_stream->id, pctx->p.ack_seq, cur_stream->snd_nxt, 
 				  cur_stream->sndvar->snd_una, cur_stream->sndvar->fss);
-			DumpIPPacketToFile(stderr, iph, ip_len);
+			DumpIPPacketToFile(stderr, pctx->p.iph, pctx->p.ip_len);
 			DumpStream(mtcp, cur_stream);
 #endif
 			//assert(0);

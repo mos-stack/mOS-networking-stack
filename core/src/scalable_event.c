@@ -7,7 +7,7 @@
  *
  * Please contact Donghwi Kim for further questions,
  * via e-mail: dhkim09a@gmail.com */
-
+#include "debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,7 +16,6 @@
 #include "scalable_event.h"
 
 #include "mtcp.h"
-#include "debug.h"
 #include "mos_api.h"
 #include "mtcp_api.h"
 
@@ -267,6 +266,9 @@ hash64(event_t ev, callback_t cb)
 inline int
 RegCb(kvs_t *store, stree_t **pstree, event_t ev, callback_t cb)
 {
+#ifdef DBGMSG
+	__PREPARE_DGBLOGGING();
+#endif
 	TRACE_DBG("/>>>>>> start <<<<<<\\\n");
 	stree_t *stree, *nstree;
 	TREE_SCRATCH(_tree_node_t, MAX_DEPTH) stack;
@@ -516,6 +518,9 @@ RegCb(kvs_t *store, stree_t **pstree, event_t ev, callback_t cb)
 inline int
 UnregCb(kvs_t *store, stree_t **pstree, event_t ev)
 {
+#ifdef DBGMSG
+	__PREPARE_DGBLOGGING();
+#endif
 	TRACE_DBG("/>>>>>> start <<<<<<\\\n");
 	stree_t *stree, *nstree;
 	TREE_SCRATCH(_tree_node_t, MAX_DEPTH) stack;
@@ -709,6 +714,9 @@ mtcp_alloc_event(event_t event)
 event_t
 mtcp_define_event(event_t event, filter_t filter, struct filter_arg *arg)
 {
+#ifdef DBGMSG
+	__PREPARE_DGBLOGGING();
+#endif
 	tree_node_t *parent, *new, *walk;
 
 	if (!filter)

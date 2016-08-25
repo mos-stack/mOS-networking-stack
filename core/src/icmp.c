@@ -14,6 +14,8 @@
 #include "config.h"
 
 #define IP_NEXT_PTR(iph) ((uint8_t *)iph + (iph->ihl << 2))
+void 
+DumpICMPPacket(struct icmphdr *icmph, uint32_t saddr, uint32_t daddr);
 
 /*----------------------------------------------------------------------------*/
 
@@ -87,17 +89,17 @@ ICMPOutput(struct mtcp_manager *mtcp, struct pkt_ctx *pctx, uint32_t saddr, uint
     }
    
     /* Check if we have valid next hop address */
-    if(!haddr)
-        return (uint8_t *) ERROR;
+    if (!haddr)
+	    return (uint8_t *) ERROR;
     
     /* Set up timestamp for EthernetOutput */
     gettimeofday(&cur_ts, NULL);
     ts = TIMEVAL_TO_TS(&cur_ts);
-
+    
     /* Allocate a buffer */
     iph = (struct iphdr *)EthernetOutput(mtcp, pctx, ETH_P_IP, nif, haddr, pktlen, ts);
     if (!iph)
-        return (uint8_t *) ERROR;
+	    return (uint8_t *) ERROR;
     
     /* Fill in the ip header */
     iph->ihl = IP_HEADER_LEN >> 2;

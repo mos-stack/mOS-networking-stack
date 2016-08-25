@@ -19,7 +19,7 @@ MTCP_HDR = mtcp_api.h mos_api.h mtcp_epoll.h mtcp_util.h
 GCC = gcc
 GCC_OPT = -m64 -Wall -fPIC -DNEWEV -DNEWRB -DNEWPPEEK -fgnu89-inline
 
-#DBG_OPT = -DDBGMSG -DDBGFUNC -DSTREAM -DSTATE -DTSTAT -DAPP -DEPOLL
+#DBG_OPT = -DDBGMSG -DDBGFUNC -DSTREAM -DSTATE -DTSTAT -DAPP
 #DBG_OPT = -DDBGMSG -DDBGFUNC -DSTREAM -DSTATE
 #DBG_OPT += -DPKTDUMP
 #DBG_OPT += -DDUMP_STREAM
@@ -127,7 +127,6 @@ $(OBJS): %.o: %.c Makefile
 	$(HIDE) $(GCC) $(GCC_OPT) $(INC) -c $< -o $@
 $(DEPS): .%.d: %.c Makefile
 	@mkdir -p .bpf
-	$(MSG) "   CC $<"
 	$(HIDE) $(GCC) $(GCC_OPT) $(INC) -MM $(CFLAGS) $< > $@
 
 -include $(DEPS)

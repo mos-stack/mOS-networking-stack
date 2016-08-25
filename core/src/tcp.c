@@ -437,7 +437,7 @@ ProcessInTCPPacket(mtcp_manager_t mtcp, struct pkt_ctx *pctx)
 						iph->saddr, pctx->p.iph->daddr)) {
 		TRACE_DBG("Checksum Error: Original: 0x%04x, calculated: 0x%04x\n",
 				tcph->check, TCPCalcChecksum((uint16_t *)tcph,
-				(tcph->doff << 2) + payloadlen,
+				(tcph->doff << 2) + pctx->p.payloadlen,
 				iph->saddr, iph->daddr));
 		if (pctx->forward && mtcp->num_msp)
 			ForwardIPPacket(mtcp, pctx);

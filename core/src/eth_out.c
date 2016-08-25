@@ -223,11 +223,6 @@ EthernetOutput(struct mtcp_manager *mtcp, struct pkt_ctx *pctx,
 		return NULL;
 	}
 
-	TRACE_DBG("dst_hwaddr: %02X:%02X:%02X:%02X:%02X:%02X\n",
-				stream->sndvar->d_haddr[0], stream->sndvar->d_haddr[1], 
-				stream->sndvar->d_haddr[2],	stream->sndvar->d_haddr[3], 
-				stream->sndvar->d_haddr[4], stream->sndvar->d_haddr[5]);
-
 	ethh = (struct ethhdr *)buf;
 	for (i = 0; i < ETH_ALEN; i++) {
 		ethh->h_source[i] = g_config.mos->netdev_table->ent[nif]->haddr[i];
@@ -267,11 +262,6 @@ ForwardEthernetFrame(struct mtcp_manager *mtcp, struct pkt_ctx *pctx)
 			TRACE_DBG("Failed to get available write buffer\n");
 			return;
 		}
-		
-		TRACE_DBG("dst_hwaddr: %02X:%02X:%02X:%02X:%02X:%02X\n",
-			  stream->sndvar->d_haddr[0], stream->sndvar->d_haddr[1], 
-			  stream->sndvar->d_haddr[2],	stream->sndvar->d_haddr[3], 
-			  stream->sndvar->d_haddr[4], stream->sndvar->d_haddr[5]);
 		
 		memcpy(buf, pctx->p.ethh, pctx->p.eth_len);
 	} else {

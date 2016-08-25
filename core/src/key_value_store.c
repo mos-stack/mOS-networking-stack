@@ -1,3 +1,4 @@
+#include "debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,7 +7,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/queue.h>
-#include "debug.h"
 #include "key_value_store.h"
 #include "scalable_event.h"
 
@@ -53,6 +53,9 @@ kvs_destroy(kvs_t *ht)
 int 
 kvs_insert(kvs_t *ht, _key_t const key, void * const value)
 {
+#ifdef DBGMSG
+	__PREPARE_DGBLOGGING();
+#endif
 	/* create an entry*/ 
 	int idx;
 
@@ -89,6 +92,9 @@ kvs_insert(kvs_t *ht, _key_t const key, void * const value)
 void * 
 kvs_remove(kvs_t *ht, _key_t const key)
 {
+#ifdef DBGMSG
+	__PREPARE_DGBLOGGING();
+#endif
 	struct kvs_entry *walk;
 	kvs_bucket_head *head;
 
@@ -110,6 +116,9 @@ kvs_remove(kvs_t *ht, _key_t const key)
 void *
 kvs_search(kvs_t *ht, _key_t const key)
 {
+#ifdef DBGMSG
+	__PREPARE_DGBLOGGING();
+#endif
 	TRACE_DBG("look for %lX from 0x%p..\n", key, ht);
 
 	struct kvs_entry *walk;

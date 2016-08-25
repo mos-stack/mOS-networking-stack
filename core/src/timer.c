@@ -502,8 +502,7 @@ CheckConnectionTimeout(mtcp_manager_t mtcp, uint32_t cur_ts, int thresh)
 		if ((int32_t)(cur_ts - walk->last_active_ts) >= 
 				g_config.mos->tcp_timeout) {
 
-			TRACE_DBG("stream->sock->id: %d, stream-state: %s, streampair-state: %s\n",
-				  walk->socket->id,
+			TRACE_DBG("stream-state: %s, streampair-state: %s\n",
 				  TCPStateToString(walk),
 				  TCPStateToString(walk->pair_stream));
 			

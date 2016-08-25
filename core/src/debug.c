@@ -42,8 +42,10 @@ thread_printf(mtcp_manager_t mtcp, FILE* f_idx, const char* _Format, ...)
 	}
 
 	if (!wbuf) {
-		wbuf = DequeueFreeBuffer(mtcp->logger);
-		assert(wbuf);
+		do { // out of free buffers!!
+			wbuf = DequeueFreeBuffer(mtcp->logger);
+			assert(wbuf);
+		} while (!wbuf);
 		wbuf->buff_len = 0;
 		wbuf->tid = mtcp->ctx->cpu;
 		wbuf->fid = f_idx;
@@ -73,7 +75,7 @@ DumpPacket(mtcp_manager_t mtcp, char *buf, int len, char *step, int ifindex)
 		thread_printf(mtcp, mtcp->log_fp, "%s ? %u", step, mtcp->cur_ts);
 
 	ethh = (struct ethhdr *)buf;
-//	if (ntohs(ethh->h_proto) != ETH_P_IP) {
+	if (ntohs(ethh->h_proto) != ETH_P_IP) {
 		thread_printf(mtcp, mtcp->log_fp, "%02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X ",
 				ethh->h_source[0],
 				ethh->h_source[1],
@@ -89,8 +91,8 @@ DumpPacket(mtcp_manager_t mtcp, char *buf, int len, char *step, int ifindex)
 				ethh->h_dest[5]);
 
 		thread_printf(mtcp, mtcp->log_fp, "protocol %04hx  ", ntohs(ethh->h_proto));
-//		goto done;
-//	}
+		goto done;
+	}
 
 	thread_printf(mtcp, mtcp->log_fp, " ");
 
