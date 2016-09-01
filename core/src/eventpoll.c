@@ -275,9 +275,11 @@ mtcp_epoll_ctl(mctx_t mctx, int epid,
 		socket->ep_data = event->data;
 		socket->epoll = events;
 
-		TRACE_EPOLL("Adding epoll socket %d(type %d) ET: %u, IN: %u, OUT: %u\n", 
-				socket->id, socket->socktype, socket->epoll & MOS_EPOLLET, 
-				socket->epoll & MOS_EPOLLIN, socket->epoll & MOS_EPOLLOUT);
+		TRACE_EPOLL("Adding epoll socket %d(type %d) ET: %llu, IN: %llu, OUT: %llu\n", 
+			    socket->id, socket->socktype,
+			    (unsigned long long)socket->epoll & MOS_EPOLLET, 
+			    (unsigned long long)socket->epoll & MOS_EPOLLIN,
+			    (unsigned long long)socket->epoll & MOS_EPOLLOUT);
 
 		if (socket->socktype == MOS_SOCK_STREAM) {
 			RaisePendingStreamEvents(mtcp, ep, socket);

@@ -57,8 +57,10 @@
 	mtcp_manager_t mtcp = GetMTCPManager(&mctx);
 
 #define TRACE_DBG(f, m...) {\
-	thread_printf(mtcp, mtcp->log_fp, "[%10s:%4d] " \
-			f, __FUNCTION__, __LINE__, ##m);   \
+		(mtcp != NULL) ?			   \
+			thread_printf(mtcp, mtcp->log_fp, "[%10s:%4d] "	\
+				      f, __FUNCTION__, __LINE__, ##m) : \
+			fprintf(stderr, "[CPU %d][%10s:%4d] " f, 0, __FUNCTION__, __LINE__, ##m); \
 	}
 
 #else
@@ -215,9 +217,11 @@
 
 #ifdef DBGFUNC
 
-#define TRACE_FUNC(n, f, m...) {                                         \
-	thread_printf(mtcp, mtcp->log_fp, "[%6s: %10s:%4d] " \
-			f, n, __FUNCTION__, __LINE__, ##m);    \
+#define TRACE_FUNC(n, f, m...) {			     \
+		(mtcp != NULL) ?			     \
+			thread_printf(mtcp, mtcp->log_fp, "[%6s: %10s:%4d] " \
+				      f, n, __FUNCTION__, __LINE__, ##m) : \
+			fprintf(stderr, "[CPU %d][%10s:%4d] " f, 0, __FUNCTION__, __LINE__, ##m); \
 	}
 
 #else

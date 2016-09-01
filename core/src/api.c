@@ -61,7 +61,7 @@ GetMTCPManager(mctx_t mctx)
 		return NULL;
 	}
 
-	if (g_mtcp[mctx->cpu]->ctx->done || g_mtcp[mctx->cpu]->ctx->exit) {
+	if (!g_mtcp[mctx->cpu] || g_mtcp[mctx->cpu]->ctx->done || g_mtcp[mctx->cpu]->ctx->exit) {
 		errno = EPERM;
 		return NULL;
 	}

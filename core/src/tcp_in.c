@@ -652,11 +652,11 @@ ProcessTCPPayload(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 	}
 	
 	TRACE_EPOLL("Stream %d data arrived. "
-		    "len: %d, ET: %u, IN: %u, OUT: %u\n", 
+		    "len: %d, ET: %llu, IN: %llu, OUT: %llu\n", 
 		    cur_stream->id, pctx->p.payloadlen, 
-		    cur_stream->socket? cur_stream->socket->epoll & MOS_EPOLLET : 0, 
-		    cur_stream->socket? cur_stream->socket->epoll & MOS_EPOLLIN : 0, 
-		    cur_stream->socket? cur_stream->socket->epoll & MOS_EPOLLOUT : 0);
+		    cur_stream->socket? (unsigned long long)cur_stream->socket->epoll & MOS_EPOLLET : 0, 
+		    cur_stream->socket? (unsigned long long)cur_stream->socket->epoll & MOS_EPOLLIN : 0, 
+		    cur_stream->socket? (unsigned long long)cur_stream->socket->epoll & MOS_EPOLLOUT : 0);
 	
 	if (cur_stream->state == TCP_ST_ESTABLISHED)
 		RaiseReadEvent(mtcp, cur_stream);
@@ -1286,8 +1286,7 @@ UpdateRecvTCPContext(mtcp_manager_t mtcp, struct tcp_stream *cur_stream,
 			/* Handle retransmitted FIN packet */
 			if (pctx->p.seq == cur_stream->pair_stream->sndvar->fss) {
 				TRACE_DBG("FIN retransmit! (seq = %u / fss = %u)\n",
-						pctx->p.seq, cur_stream->pair_stream->sndvar->fss,
-						cur_stream->sndvar->fss);
+						pctx->p.seq, cur_stream->pair_stream->sndvar->fss);
 				cur_stream->cb_events |= MOS_ON_REXMIT;
 			}
 		}
