@@ -1290,9 +1290,9 @@ LoadConfigurationLowerHalf(void)
 		TAILQ_FOREACH(fwalk, &nicfwd_conf->list, link) {
 			TAILQ_FOREACH(nwalk, &netdev_conf->list, link) {
 				if (!strcmp(nwalk->dev_name, fwalk->nif_in))
-					nif_in = nwalk->ifindex;
+					nif_in = nwalk->ifindex = current_iomodule_func->get_nif(&nwalk->ifr);
 				if (!strcmp(nwalk->dev_name, fwalk->nif_out))
-					nif_out = nwalk->ifindex;
+					nif_out = nwalk->ifindex = current_iomodule_func->get_nif(&nwalk->ifr);
 			}
 			
 			if (nif_in != -1)
