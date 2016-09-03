@@ -507,17 +507,24 @@ setup_iface_dpdk()
     do
 	while [ 1 ]; do	
 	    echo
-	    echo "[dpdk$(($iter))] enter IP address (e.g., 10.0.$iter.9)"
+	    echo "[dpdk$(($iter))] enter IP address[/mask] (e.g., 10.0.$iter.9[/24])"
 	    echo -n "> "
-	    read ip_addr
+	    read line
+	    ip_addr=`echo $line | awk -F '/' '{print $1}'`
+	    mask=`echo $line | awk -F '/' '{print $2}'`
 	    valid_ip_addr $ip_addr
 	    if [ $? -eq 0 ]; then
 		break
 	    fi
 	    echo "invalid IP address!" # continue
 	done
-	echo "sudo /sbin/ifconfig dpdk$(($iter)) $ip_addr netmask 255.255.255.0 up"
-	sudo /sbin/ifconfig dpdk$(($iter)) $ip_addr netmask 255.255.255.0 up
+	if [ "$mask" == "" ];then
+	    echo "sudo /sbin/ifconfig dpdk$(($iter)) $ip_addr up"
+	    sudo /sbin/ifconfig dpdk$(($iter)) $ip_addr up
+	else
+	    echo "sudo /sbin/ifconfig dpdk$(($iter)) $ip_addr/$mask up"
+	    sudo /sbin/ifconfig dpdk$(($iter)) $ip_addr/$mask up
+	fi
 	let "iter=$iter + 1"
     done
 }
