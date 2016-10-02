@@ -1,10 +1,10 @@
-TARGET = midstat
+TARGET = nat
 
 ######################################################################
 # GCC and compilation options
 ######################################################################
 GCC = gcc
-GCC_OPT = -m64 -Wall
+GCC_OPT = -m64 -Wall -Werror
 GCC_OPT += -DNDEBUG -O3 -g -DNETSTAT -DINFO -DDBGERR -DDBGCERR
 GCC_OPT += $(DBG_OPT)
 ifeq ($V,) # no echo

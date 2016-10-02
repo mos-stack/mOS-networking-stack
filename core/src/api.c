@@ -69,7 +69,7 @@ GetMTCPManager(mctx_t mctx)
 	return g_mtcp[mctx->cpu];
 }
 /*----------------------------------------------------------------------------*/
-inline int 
+static inline int 
 GetSocketError(socket_map_t socket, void *optval, socklen_t *optlen)
 {
 	tcp_stream *cur_stream;
@@ -101,6 +101,14 @@ GetSocketError(socket_map_t socket, void *optval, socklen_t *optlen)
 		}
 	}
 
+	if (cur_stream->state == TCP_ST_SYN_SENT &&
+	    errno == EINPROGRESS) {
+		*(int *)optval = errno;
+		*optlen = sizeof(int);
+		
+		return -1;
+        }
+
 	/*
 	 * `base case`: If socket sees no so_error, then
 	 * this also means close_reason will always be
@@ -115,6 +123,50 @@ GetSocketError(socket_map_t socket, void *optval, socklen_t *optlen)
 	
 	errno = ENOSYS;
 	return -1;
+}
+/*----------------------------------------------------------------------------*/
+int
+mtcp_getsockname(mctx_t mctx, int sockid, struct sockaddr *addr,
+		 socklen_t *addrlen)
+{
+	mtcp_manager_t mtcp;
+	socket_map_t socket;
+	
+	mtcp = GetMTCPManager(mctx);
+	if (!mtcp) {
+		return -1;
+	}
+
+	if (sockid < 0 || sockid >= g_config.mos->max_concurrency) {
+		TRACE_API("Socket id %d out of range.\n", sockid);
+		errno = EBADF;
+		return -1;
+	}
+	
+	socket = &mtcp->smap[sockid];
+	if (socket->socktype == MOS_SOCK_UNUSED) {
+		TRACE_API("Invalid socket id: %d\n", sockid);
+		errno = EBADF;
+		return -1;
+	}
+
+	if (*addrlen <= 0) {
+		TRACE_API("Invalid addrlen: %d\n", *addrlen);
+		errno = EINVAL;
+		return -1;
+	}
+	
+	if (socket->socktype != MOS_SOCK_STREAM_LISTEN && 
+	    socket->socktype != MOS_SOCK_STREAM) {
+		TRACE_API("Invalid socket id: %d\n", sockid);
+		errno = ENOTSOCK;
+		return -1;
+	}
+
+	*(struct sockaddr_in *)addr = socket->saddr;
+        *addrlen = sizeof(socket->saddr);
+
+	return 0;
 }
 /*----------------------------------------------------------------------------*/
 int 
@@ -807,10 +859,22 @@ mtcp_accept(mctx_t mctx, int sockid, struct sockaddr *addr, socklen_t *addrlen)
 		}
 		socket->stream = accepted;
 		accepted->socket = socket;
+
+		/* set socket addr parameters */
+		socket->saddr.sin_family = AF_INET;
+		socket->saddr.sin_port = accepted->dport;
+		socket->saddr.sin_addr.s_addr = accepted->daddr;
+
 		/* if monitor is enabled, complete the socket assignment */
 		if (socket->stream->pair_stream != NULL)
 			socket->stream->pair_stream->socket = socket;
 	}
+
+	if (!(listener->socket->epoll & MOS_EPOLLET) &&
+	    !StreamQueueIsEmpty(listener->acceptq))
+		AddEpollEvent(mtcp->ep, 
+			      USR_SHADOW_EVENT_QUEUE,
+			      listener->socket, MOS_EPOLLIN);
 
 	TRACE_API("Stream %d accepted.\n", accepted->id);
 
@@ -975,8 +1039,8 @@ mtcp_connect(mctx_t mctx, int sockid,
 			ret = FetchAddress(mtcp->ap, 
 					mctx->cpu, num_queues, addr_in, &socket->saddr);
 		} else {
-			ret = FetchAddress(ap, 
-					mctx->cpu, num_queues, addr_in, &socket->saddr);
+			ret = FetchAddress(ap[GetOutputInterface(dip)], 
+					   mctx->cpu, num_queues, addr_in, &socket->saddr);
 		}
 		if (ret < 0) {
 			errno = EAGAIN;
@@ -1491,7 +1555,7 @@ mtcp_read(mctx_t mctx, int sockid, char *buf, size_t len)
 }
 /*----------------------------------------------------------------------------*/
 ssize_t
-mtcp_readv(mctx_t mctx, int sockid, struct iovec *iov, int numIOV)
+mtcp_readv(mctx_t mctx, int sockid, const struct iovec *iov, int numIOV)
 {
 	mtcp_manager_t mtcp;
 	socket_map_t socket;
@@ -1604,7 +1668,7 @@ mtcp_readv(mctx_t mctx, int sockid, struct iovec *iov, int numIOV)
 }
 /*----------------------------------------------------------------------------*/
 static inline int 
-CopyFromUser(mtcp_manager_t mtcp, tcp_stream *cur_stream, char *buf, int len)
+CopyFromUser(mtcp_manager_t mtcp, tcp_stream *cur_stream, const char *buf, int len)
 {
 	struct tcp_send_vars *sndvar = cur_stream->sndvar;
 	int sndlen;
@@ -1646,7 +1710,7 @@ CopyFromUser(mtcp_manager_t mtcp, tcp_stream *cur_stream, char *buf, int len)
 }
 /*----------------------------------------------------------------------------*/
 ssize_t
-mtcp_write(mctx_t mctx, int sockid, char *buf, size_t len)
+mtcp_write(mctx_t mctx, int sockid, const char *buf, size_t len)
 {
 	mtcp_manager_t mtcp;
 	socket_map_t socket;
@@ -1733,7 +1797,7 @@ mtcp_write(mctx_t mctx, int sockid, char *buf, size_t len)
 }
 /*----------------------------------------------------------------------------*/
 ssize_t
-mtcp_writev(mctx_t mctx, int sockid, struct iovec *iov, int numIOV)
+mtcp_writev(mctx_t mctx, int sockid, const struct iovec *iov, int numIOV)
 {
 	mtcp_manager_t mtcp;
 	socket_map_t socket;

@@ -197,7 +197,7 @@ ProcessRST(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 #ifdef BE_RESILIENT_TO_PACKET_DROP
 			pctx->p.seq == cur_stream->rcv_nxt + 1 ||
 #endif
-			pctx->p.ack_seq == cur_stream->rcv_nxt + 1)
+			pctx->p.ack_seq == cur_stream->snd_nxt)
 		{
 			cur_stream->state = TCP_ST_CLOSED_RSVD;
 			cur_stream->cb_events |= MOS_ON_TCP_STATE_CHANGE;

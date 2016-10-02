@@ -775,6 +775,13 @@ mtcp_getpeername(mctx_t mctx, int sockfd, struct sockaddr *saddr,
 		return -1;
 	}
 
+	/* check if sockfd is within limits */
+	if (sockfd < 0 || sockfd >= g_config.mos->max_concurrency) {
+		TRACE_API("Socket id %d out of range.\n", sockfd);
+		errno = EBADF;
+		return -1;
+	}
+
 	/* check if the calling thread is in MOS context */
 	if (mtcp->ctx->thread != pthread_self()) {
 		errno = EPERM;
@@ -791,8 +798,10 @@ mtcp_getpeername(mctx_t mctx, int sockfd, struct sockaddr *saddr,
 	if (side != stream->side)
 		stream = stream->pair_stream;
 
-	if (stream == NULL)
+	if (stream == NULL) {
+		errno = ENOTCONN;
 		return -1;
+	}
 
 	/* reset to 2 * sizeof(struct sockaddr) if addrlen is too big */
 	if (*addrlen > 2 * sizeof(struct sockaddr))
@@ -822,6 +831,7 @@ mtcp_getpeername(mctx_t mctx, int sockfd, struct sockaddr *saddr,
 	default:
 		rc = -1;
 		*addrlen = 0xFFFF;
+		errno = EINVAL;
 	}
 
 	return rc;

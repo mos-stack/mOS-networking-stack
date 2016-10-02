@@ -351,6 +351,15 @@ mtcp_close(mctx_t mctx, int sock);
 int
 mtcp_abort(mctx_t mctx, int sock);
 
+/** Returns the current address to which the socket sockfd is bound
+ * @param [in] mctx: mtcp context
+ * @param [in] addr: address buffer to be filled
+ * @param [in] addrlen: amount of space pointed to by addr
+ * @return 0 on success, -1 on error
+ */
+int
+mtcp_getsockname(mctx_t mctx, int sock, struct sockaddr *addr, socklen_t *addrlen);
+
 /** Read byte stream from flow, same as `read()`
  * @return number of bytes read on success, -1 on error
  */
@@ -362,20 +371,20 @@ mtcp_read(mctx_t mctx, int sock, char *buf, size_t len);
  * @return number of bytes read on success, -1 on error
  */
 ssize_t
-mtcp_readv(mctx_t mctx, int sock, struct iovec *iov, int numIOV);
+mtcp_readv(mctx_t mctx, int sock, const struct iovec *iov, int numIOV);
 
 /** Write byte stream to flow, same as `write()`
  * @return number of bytes write on success, -1 on error
  */
 ssize_t
-mtcp_write(mctx_t mctx, int sock, char *buf, size_t len);
+mtcp_write(mctx_t mctx, int sock, const char *buf, size_t len);
 
 /* writev should work in atomic */
 /** Write byte stream to flow in vector, same as `writev()`
  * @return number of bytes write on success, -1 on error
  */
 ssize_t
-mtcp_writev(mctx_t mctx, int sock, struct iovec *iov, int numIOV);
+mtcp_writev(mctx_t mctx, int sock, const struct iovec *iov, int numIOV);
 
 /** Get concurrent flow count of the underlying mtcp manager context (per-thread)
  * @param [in] mctx: mtcp context

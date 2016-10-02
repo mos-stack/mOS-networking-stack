@@ -517,6 +517,7 @@ mtcp_app_join(mctx_t mctx);
 /** Get IP addrs/ports for both sides. 
  * (Server IP/port in 0th element) (Client IP/port in 1st element)
  * Should only be called with MOS_SOCK_MONITOR_STREAM_ACTIVE socket
+ * _NOTE_: Code is currently not set for MOS_SOCK_STREAM!!!
  * Returns 0 on success, -1 on failure
  */
 int

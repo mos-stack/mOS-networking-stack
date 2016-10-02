@@ -786,7 +786,9 @@ DestroyRemainingFlows(mtcp_manager_t mtcp)
 		TAILQ_FOREACH(walk, &ht->ht_table[i], rcvvar->he_link) {
 			thread_printf(mtcp, mtcp->log_fp, 
 					"CPU %d: Destroying stream %d\n", mtcp->ctx->cpu, walk->id);
+#ifdef DUMP_STREAM
 			DumpStream(mtcp, walk);
+#endif
 			DestroyTCPStream(mtcp, walk);
 			cnt++;
 		}
@@ -1547,7 +1549,9 @@ mtcp_destroy_context(mctx_t mctx)
 			if (mtcp->smap[i].socktype == MOS_SOCK_STREAM) {
 				TRACE_DBG("Closing remaining socket %d (%s)\n", 
 						i, TCPStateToString(mtcp->smap[i].stream));
+#ifdef DUMP_STREAM
 				DumpStream(mtcp, mtcp->smap[i].stream);
+#endif
 				mtcp_close(mctx, i);
 			}
 		}
@@ -1774,13 +1778,15 @@ mtcp_init(const char *config_file)
 
 	//PrintConfiguration();
 
-	/* TODO: this should be fixed */
-	ap = CreateAddressPool(g_config.mos->netdev_table->ent[0]->ip_addr, 1);
-	if (!ap) {
-		TRACE_CONFIG("Error occured while creating address pool.\n");
-		return -1;
+	for (i = 0; i < g_config.mos->netdev_table->num; i++) {
+		ap[i] = CreateAddressPool(g_config.mos->netdev_table->ent[i]->ip_addr, 1);
+		if (!ap[i]) {
+			TRACE_CONFIG("Error occured while create address pool[%d]\n",
+				     i);
+			return -1;
+		}
 	}
-	
+
 	//PrintInterfaceInfo();
 	//PrintRoutingTable();
 	//PrintARPTable();
@@ -1821,7 +1827,8 @@ mtcp_destroy()
 		}
 	}
 
-	DestroyAddressPool(ap);
+	for (i = 0; i < g_config.mos->netdev_table->num; i++)
+		DestroyAddressPool(ap[i]);
 
 	TRACE_INFO("All MTCP threads are joined.\n");
 

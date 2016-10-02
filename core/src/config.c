@@ -33,6 +33,7 @@
 /*----------------------------------------------------------------------------*/
 int8_t end_app_exists = 0;
 int8_t mon_app_exists = 0;
+addr_pool_t ap[ETH_NUM] = {NULL};
 /*----------------------------------------------------------------------------*/
 /* return 0 on failure */
 #define MATCH_ITEM(name, item) \

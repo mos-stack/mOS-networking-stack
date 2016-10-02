@@ -159,6 +159,7 @@ FreeSocket(mctx_t mctx, int sockid, int socktype)
 
 	socket->socktype = MOS_SOCK_UNUSED;
 	socket->epoll = MOS_EPOLLNONE;
+	socket->events = 0;
 }
 /*---------------------------------------------------------------------------*/
 socket_map_t 

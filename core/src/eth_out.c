@@ -209,6 +209,14 @@ EthernetOutput(struct mtcp_manager *mtcp, struct pkt_ctx *pctx,
 	struct ethhdr *ethh;
 	int i;
 #if E_PSIO || USE_CHUNK_BUF
+	/* 
+	 * -sanity check- 
+	 * return early if no interface is set (if routing entry does not exist)
+	 */
+	if (nif < 0) {
+		TRACE_INFO("No interface set!\n");
+		return NULL;
+	}
 	if (!mtcp->iom->get_wptr) {
 		TRACE_INFO("get_wptr() in io_module is undefined.");
 		return NULL;

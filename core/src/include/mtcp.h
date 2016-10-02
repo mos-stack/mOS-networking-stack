@@ -320,7 +320,7 @@ typedef struct mtcp_thread_context* mtcp_thread_context_t;
 /*----------------------------------------------------------------------------*/
 struct mtcp_manager *g_mtcp[MAX_CPUS];
 struct mtcp_context *g_ctx[MAX_CPUS];
-addr_pool_t ap;
+extern addr_pool_t ap[ETH_NUM];
 /*----------------------------------------------------------------------------*/
 void 
 RunPassiveLoop(mtcp_manager_t mtcp);
