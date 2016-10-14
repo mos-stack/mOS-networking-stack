@@ -14,5 +14,7 @@ To download our source, type:
 # git clone https://github.com/ndsl-kaist/mOS-networking-stack.git
 ```
 
+Pull requests and bug fixes are welcomed!
+
 ## Documentation
 Please visit http://mos.kaist.edu/ for more instructions.
