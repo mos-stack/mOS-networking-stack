@@ -1422,6 +1422,21 @@ mtcp_abort(mctx_t mctx, int sockid)
 }
 /*----------------------------------------------------------------------------*/
 static inline int
+PeekForUser(mtcp_manager_t mtcp, tcp_stream *cur_stream, char *buf, int len)
+{
+	struct tcp_recv_vars *rcvvar = cur_stream->rcvvar;
+	int copylen;
+	tcprb_t *rb = rcvvar->rcvbuf;
+
+	if ((copylen = tcprb_ppeek(rb, (uint8_t *)buf, len, rb->pile)) <= 0) {
+		errno = EAGAIN;
+		return -1;
+	}
+
+	return copylen;
+}
+/*----------------------------------------------------------------------------*/
+static inline int
 CopyToUser(mtcp_manager_t mtcp, tcp_stream *cur_stream, char *buf, int len)
 {
 	struct tcp_recv_vars *rcvvar = cur_stream->rcvvar;
@@ -1454,7 +1469,7 @@ CopyToUser(mtcp_manager_t mtcp, tcp_stream *cur_stream, char *buf, int len)
 }
 /*----------------------------------------------------------------------------*/
 ssize_t
-mtcp_read(mctx_t mctx, int sockid, char *buf, size_t len)
+mtcp_recv(mctx_t mctx, int sockid, char *buf, size_t len, int flags)
 {
 	mtcp_manager_t mtcp;
 	socket_map_t socket;
@@ -1462,26 +1477,26 @@ mtcp_read(mctx_t mctx, int sockid, char *buf, size_t len)
 	struct tcp_recv_vars *rcvvar;
 	int event_remaining, merged_len;
 	int ret;
-
+	
 	mtcp = GetMTCPManager(mctx);
 	if (!mtcp) {
 		errno = EACCES;
 		return -1;
 	}
-
+	
 	if (sockid < 0 || sockid >= g_config.mos->max_concurrency) {
 		TRACE_API("Socket id %d out of range.\n", sockid);
 		errno = EBADF;
 		return -1;
 	}
-
+	
 	socket = &mtcp->smap[sockid];
 	if (socket->socktype == MOS_SOCK_UNUSED) {
 		TRACE_API("Invalid socket id: %d\n", sockid);
 		errno = EBADF;
 		return -1;
 	}
-
+	
 	if (socket->socktype == MOS_SOCK_PIPE) {
 		return PipeRead(mctx, sockid, buf, len);
 	}
@@ -1491,20 +1506,20 @@ mtcp_read(mctx_t mctx, int sockid, char *buf, size_t len)
 		errno = ENOTSOCK;
 		return -1;
 	}
-
+	
 	/* stream should be in ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2, CLOSE_WAIT */
 	cur_stream = socket->stream;
 	if (!cur_stream || !cur_stream->rcvvar || !cur_stream->rcvvar->rcvbuf ||
-			!(cur_stream->state >= TCP_ST_ESTABLISHED && 
-			cur_stream->state <= TCP_ST_CLOSE_WAIT)) {
+	    !(cur_stream->state >= TCP_ST_ESTABLISHED && 
+	      cur_stream->state <= TCP_ST_CLOSE_WAIT)) {
 		errno = ENOTCONN;
 		return -1;
 	}
-
+	
 	rcvvar = cur_stream->rcvvar;
-
+	
 	merged_len = tcprb_cflen(rcvvar->rcvbuf);
-
+	
 	/* if CLOSE_WAIT, return 0 if there is no payload */
 	if (cur_stream->state == TCP_ST_CLOSE_WAIT) {
 		if (!rcvvar->rcvbuf)
@@ -1513,7 +1528,7 @@ mtcp_read(mctx_t mctx, int sockid, char *buf, size_t len)
 		if (merged_len == 0)
 			return 0;
 	}
-
+	
 	/* return EAGAIN if no receive buffer */
 	if (socket->opts & MTCP_NONBLOCK) {
 		if (!rcvvar->rcvbuf || merged_len == 0) {
@@ -1521,11 +1536,23 @@ mtcp_read(mctx_t mctx, int sockid, char *buf, size_t len)
 			return -1;
 		}
 	}
-
+	
 	SBUF_LOCK(&rcvvar->read_lock);
 
-	ret = CopyToUser(mtcp, cur_stream, buf, len);
-
+	switch (flags) {
+	case 0:
+		ret = CopyToUser(mtcp, cur_stream, buf, len);
+		break;
+	case MSG_PEEK:
+		ret = PeekForUser(mtcp, cur_stream, buf, len);
+		break;
+	default:
+		SBUF_UNLOCK(&rcvvar->read_lock);
+		ret = -1;
+		errno = EINVAL;
+		return ret;
+	}
+	
 	merged_len = tcprb_cflen(rcvvar->rcvbuf);
 	event_remaining = FALSE;
 	/* if there are remaining payload, generate EPOLLIN */
@@ -1537,21 +1564,27 @@ mtcp_read(mctx_t mctx, int sockid, char *buf, size_t len)
 	}
 	/* if waiting for close, notify it if no remaining data */
 	if (cur_stream->state == TCP_ST_CLOSE_WAIT && 
-			merged_len == 0 && ret > 0) {
+	    merged_len == 0 && ret > 0) {
 		event_remaining = TRUE;
 	}
 	
 	SBUF_UNLOCK(&rcvvar->read_lock);
-
+	
 	if (event_remaining) {
 		if (socket->epoll) {
 			AddEpollEvent(mtcp->ep, 
 				      USR_SHADOW_EVENT_QUEUE, socket, MOS_EPOLLIN);
 		}
 	}
-
-	TRACE_API("Stream %d: mtcp_read() returning %d\n", cur_stream->id, ret);
+	
+	TRACE_API("Stream %d: mtcp_recv() returning %d\n", cur_stream->id, ret);
 	return ret;
+}
+/*----------------------------------------------------------------------------*/
+inline ssize_t
+mtcp_read(mctx_t mctx, int sockid, char *buf, size_t len)
+{
+	return mtcp_recv(mctx, sockid, buf, len, 0);
 }
 /*----------------------------------------------------------------------------*/
 ssize_t

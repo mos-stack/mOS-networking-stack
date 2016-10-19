@@ -360,10 +360,17 @@ mtcp_abort(mctx_t mctx, int sock);
 int
 mtcp_getsockname(mctx_t mctx, int sock, struct sockaddr *addr, socklen_t *addrlen);
 
-/** Read byte stream from flow, same as `read()`
+/** Read byte stream from flow, same as `recv()`
+ * For now, it can only accept flags 0 (default aka mtcp_read()) & MSG_PEEK
  * @return number of bytes read on success, -1 on error
  */
 ssize_t
+mtcp_recv(mctx_t mctx, int sockid, char *buf, size_t len, int flags);
+
+/** Read byte stream from flow, same as `read()`
+ * @return number of bytes read on success, -1 on error
+ */
+inline ssize_t
 mtcp_read(mctx_t mctx, int sock, char *buf, size_t len);
 
 /* readv should work in atomic */

@@ -97,15 +97,6 @@ static struct rte_eth_conf port_conf = {
 	.txmode = {
 		.mq_mode = 		ETH_MQ_TX_NONE,
 	},
-#if 0
-	.fdir_conf = {
-                .mode = RTE_FDIR_MODE_PERFECT,
-                .pballoc = RTE_FDIR_PBALLOC_256K,
-                .status = RTE_FDIR_REPORT_STATUS_ALWAYS,
-                //.flexbytes_offset = 0x6,
-                .drop_queue = 127,
-        },
-#endif
 };
 
 static const struct rte_eth_rxconf rx_conf = {
@@ -520,53 +511,6 @@ check_all_ports_link_status(uint8_t port_num, uint32_t port_mask)
 	}
 }
 /*----------------------------------------------------------------------------*/
-#if 0
-static void
-dpdk_enable_fdir(int portid, uint8_t is_master)
-{
-	struct rte_fdir_masks fdir_masks;
-	struct rte_fdir_filter fdir_filter;
-	int ret;
-	
-	memset(&fdir_filter, 0, sizeof(struct rte_fdir_filter));
-	fdir_filter.iptype = RTE_FDIR_IPTYPE_IPV4;
-	fdir_filter.l4type = RTE_FDIR_L4TYPE_TCP;
-	fdir_filter.ip_dst.ipv4_addr = g_config.mos->netdev_table->ent[portid]->ip_addr;
-	
-	if (is_master) {
-		memset(&fdir_masks, 0, sizeof(struct rte_fdir_masks));
-		fdir_masks.src_ipv4_mask = 0x0;
-		fdir_masks.dst_ipv4_mask = 0xFFFFFFFF;
-		fdir_masks.src_port_mask = 0x0;
-		fdir_masks.dst_port_mask = 0x0;
-		
-		/*
-		 * enable the following if the filter is IP-only
-		 * (non-TCP, non-UDP)
-		 */
-		/* fdir_masks.only_ip_flow = 1; */
-		rte_eth_dev_fdir_set_masks(portid, &fdir_masks);
-		ret = rte_eth_dev_fdir_add_perfect_filter(portid,
-							  &fdir_filter,
-							  0,
-							  g_config.mos->multiprocess_curr_core,
-							  0);
-	} else {
-		ret = rte_eth_dev_fdir_update_perfect_filter(portid,
-							     &fdir_filter,
-							     0,
-							     g_config.mos->multiprocess_curr_core,
-							     0);
-	}
-	if (ret < 0) {
-		rte_exit(EXIT_FAILURE,
-			 "fdir_add_perfect_filter_t call failed!: %d\n",
-			 ret);
-	}
-	fprintf(stderr, "Filter for device ifidx: %d added\n", portid);
-}
-#endif
-/*----------------------------------------------------------------------------*/
 int32_t
 dpdk_dev_ioctl(struct mtcp_thread_context *ctx, int nif, int cmd, void *argp)
 {
@@ -795,11 +739,6 @@ dpdk_load_module_lower_half(void)
 					ports_eth_addr[portid].addr_bytes[4],
 					ports_eth_addr[portid].addr_bytes[5]);
 #endif
-#if 0
-			/* if multi-process support is enabled, then turn on FDIR */
-			if (g_config.mos->multiprocess)
-				dpdk_enable_fdir(portid, g_config.mos->multiprocess_is_master);
-#endif
 		}
 	} else { /* g_config.mos->multiprocess && !g_config.mos->multiprocess_is_master */
 		for (rxlcore_id = 0; rxlcore_id < g_config.mos->num_cores; rxlcore_id++) {
@@ -811,10 +750,6 @@ dpdk_load_module_lower_half(void)
 			if (pktmbuf_pool[rxlcore_id] == NULL)
 				rte_exit(EXIT_FAILURE, "Cannot init mbuf pool\n");
 		}
-#if 0
-		for (portid = 0; portid < g_config.mos->netdev_table->num; portid++)
-			dpdk_enable_fdir(portid, g_config.mos->multiprocess_is_master);
-#endif
 	}
 
 	check_all_ports_link_status(g_config.mos->netdev_table->num, 0xFFFFFFFF);

@@ -1742,6 +1742,10 @@ mtcp_init(const char *config_file)
 
 	if (geteuid()) {
 		TRACE_CONFIG("[CAUTION] Run as root if mlock is necessary.\n");
+#if defined(ENABLE_DPDK) || defined(ENABLE_DPDKR) || defined(ENABLE_NETMAP)
+		TRACE_CONFIG("[CAUTION] Run the app as root!\n");
+		exit(EXIT_FAILURE);
+#endif
 	}
 
 	/* getting cpu and NIC */
