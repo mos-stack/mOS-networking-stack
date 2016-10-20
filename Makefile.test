@@ -1,0 +1,8 @@
+samples = epserver epwget midstat nat simple_firewall
+
+test: samples
+	for i in $(samples) ; do \
+		cd samples/$$i ; \
+		make ; \
+		cd ../.. ; \
+	done

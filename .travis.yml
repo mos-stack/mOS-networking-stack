@@ -3,8 +3,14 @@ dist: trusty
 install:
   - sudo apt-get -qq update
   - sudo apt-get install -y linux-headers-$(uname -r)
-  - sudo apt-get install libnuma-dev
+  - sudo apt-get install libnuma-dev libpcap-dev
 
 script:
   - echo | ./setup.sh --compile-dpdk
+  - make -f Makefile.test
+  - ./setup.sh --compile-netmap
+  - make -f Makefile.test
+  - ./setup.sh --compile-pcap
+  - make -f Makefile.test
+
 
