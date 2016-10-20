@@ -7,10 +7,10 @@ install:
 
 script:
   - echo | ./setup.sh --compile-dpdk
-  - make -f Makefile.test
+  - make -f scripts/Makefile.test
   - ./setup.sh --compile-netmap
-  - make -f Makefile.test
+  - make -f scripts/Makefile.test
   - ./setup.sh --compile-pcap
-  - make -f Makefile.test
+  - make -f scripts/Makefile.test
 
 
