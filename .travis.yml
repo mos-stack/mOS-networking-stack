@@ -18,7 +18,7 @@ before_install:
   - |
       if [ "$VERSION" = "5" ]; then
         sudo apt-get install -qq -y gcc-5
-      elif[ "$VERSION" = "4.8" ]; then
+      elif [ "$VERSION" = "4.8" ]; then
         sudo apt-get install -qq -y gcc-4.8
       fi
 
