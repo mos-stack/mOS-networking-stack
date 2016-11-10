@@ -479,11 +479,15 @@ ProcessInTCPPacket(mtcp_manager_t mtcp, struct pkt_ctx *pctx)
 			}
 		}
 		if (mtcp->listener) {
-			/* Send RST if it is run as EndTCP only mode */
-			SendTCPPacketStandalone(mtcp,
-						iph->daddr, tcph->dest, iph->saddr, tcph->source,
-						0, pctx->p.seq + pctx->p.payloadlen + 1, 0, TCP_FLAG_RST | TCP_FLAG_ACK,
-						NULL, 0, pctx->p.cur_ts, 0);
+			/* RFC 793 (page 65) says
+			   "An incoming segment containing a RST is discarded."
+			   if the TCP state is CLOSED (= TCP stream does not exist). */
+			if (!tcph->rst)
+				/* Send RST if it is run as EndTCP only mode */
+				SendTCPPacketStandalone(mtcp,
+							iph->daddr, tcph->dest, iph->saddr, tcph->source,
+							0, pctx->p.seq + pctx->p.payloadlen + 1, 0, TCP_FLAG_RST | TCP_FLAG_ACK,
+							NULL, 0, pctx->p.cur_ts, 0);
 		} else if (pctx->forward) {
 			/* Do forward or drop if it run as Monitor only mode */
 			ForwardIPPacket(mtcp, pctx);
