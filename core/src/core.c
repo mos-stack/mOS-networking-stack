@@ -835,11 +835,7 @@ RunMainLoop(struct mtcp_thread_context *ctx)
 	mtcp_manager_t mtcp = ctx->mtcp_manager;
 	int i;
 	int recv_cnt;
-
-#if E_PSIO
 	int rx_inf, tx_inf;
-#endif
-
 	struct timeval cur_ts = {0};
 	uint32_t ts, ts_prev;
 
@@ -850,20 +846,6 @@ RunMainLoop(struct mtcp_thread_context *ctx)
 	int thresh;
 
 	gettimeofday(&cur_ts, NULL);
-
-#if E_PSIO
-	/* do nothing */
-#else
-#if !USE_CHUNK_BUF
-	/* create packet write chunk */
-	InitWriteChunks(handle, ctx->w_chunk);
-	for (i = 0; i < ETH_NUM; i++) {
-		ctx->w_chunk[i].cnt = 0;
-		ctx->w_off[i] = 0;
-		ctx->w_cur_idx[i] = 0;
-	}
-#endif
-#endif
 
 	TRACE_DBG("CPU %d: mtcp thread running.\n", ctx->cpu);
 
@@ -883,15 +865,6 @@ RunMainLoop(struct mtcp_thread_context *ctx)
 		
 		STAT_COUNT(mtcp->runstat.rounds);
 		recv_cnt = 0;
-			
-#if E_PSIO
-#if 0
-		event.timeout = PS_SELECT_TIMEOUT;
-		NID_ZERO(event.rx_nids);
-		NID_ZERO(event.tx_nids);
-		NID_ZERO(rx_avail);
-		//NID_ZERO(tx_avail);
-#endif
 		gettimeofday(&cur_ts, NULL);
 #if TIME_STAT
 		/* measure the inter-round delay */
@@ -921,38 +894,6 @@ RunMainLoop(struct mtcp_thread_context *ctx)
 		}
 		STAT_COUNT(mtcp->runstat.rounds_rx);
 
-#else /* E_PSIO */
-		gettimeofday(&cur_ts, NULL);
-		ts = TIMEVAL_TO_TS(&cur_ts);
-		mtcp->cur_ts = ts;
-		/*
-		 * Read packets into a chunk from NIC
-		 * chk_w_idx : next chunk index to write packets from NIC
-		 */
-
-		STAT_COUNT(mtcp->runstat.rounds_rx_try);
-		chunk.cnt = PS_CHUNK_SIZE;
-		recv_cnt = ps_recv_chunk(handle, &chunk);
-		if (recv_cnt < 0) {
-			if (errno != EAGAIN && errno != EINTR) {
-				perror("ps_recv_chunk");
-				assert(0);
-			}
-		}
-
-		/* 
-		 * Handling Packets 
-		 * chk_r_idx : next chunk index to read and handle
-		*/
-		for (i = 0; i < recv_cnt; i++) {
-			ProcessPacket(mtcp, chunk.queue.ifindex, ts, 
-					(u_char *)(chunk.buf + chunk.info[i].offset), 
-					chunk.info[i].len);
-		}
-
-		if (recv_cnt > 0)
-			STAT_COUNT(mtcp->runstat.rounds_rx);
-#endif /* E_PSIO */
 #if TIME_STAT
 		gettimeofday(&processing_ts, NULL);
 		UpdateStatCounter(&mtcp->rtstat.processing, 
@@ -1047,32 +988,13 @@ RunMainLoop(struct mtcp_thread_context *ctx)
 		WritePacketsToChunks(mtcp, ts);
 
 		/* send packets from write buffer */
-#if E_PSIO
-		/* With E_PSIO, send until tx is available */
+		/* Send until tx is available */
 		int num_dev = g_config.mos->netdev_table->num;
 		if (likely(mtcp->iom->send_pkts != NULL))
 			for (tx_inf = 0; tx_inf < num_dev; tx_inf++) {
 				mtcp->iom->send_pkts(ctx, tx_inf);
 			}
-
-#else /* E_PSIO */
-		/* Without E_PSIO, try send chunks immediately */
-		for (i = 0; i < g_config.mos->netdev_table->num; i++) {
-#if USE_CHUNK_BUF
-			/* in the case of using ps_send_chunk_buf() without E_PSIO */
-			ret = FlushSendChunkBuf(mtcp, i);
-#else
-			/* if not using ps_send_chunk_buf() */
-			ret = FlushWriteBuffer(ctx, i);
-#endif
-			if (ret < 0) {
-				TRACE_ERROR("Failed to send chunks.\n");
-			} else if (ret > 0) {
-				STAT_COUNT(mtcp->runstat.rounds_tx);
-			}
-		}
-#endif /* E_PSIO */
-
+		
 #if TIME_STAT
 		gettimeofday(&xmit_ts, NULL);
 		UpdateStatCounter(&mtcp->rtstat.xmit, 
@@ -1789,8 +1711,8 @@ mtcp_init(const char *config_file)
 				     i);
 			return -1;
 		}
-	}
-
+        }
+	
 	//PrintInterfaceInfo();
 	//PrintRoutingTable();
 	//PrintARPTable();

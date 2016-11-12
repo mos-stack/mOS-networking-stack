@@ -76,8 +76,6 @@
 #else
 #define USE_SPIN_LOCK		TRUE
 #endif
-#define E_PSIO				TRUE
-#define USE_CHUNK_BUF		FALSE
 #define LOCK_STREAM_QUEUE	FALSE
 #define INTR_SLEEPING_MTCP	TRUE
 #define PROMISCUOUS_MODE	TRUE
