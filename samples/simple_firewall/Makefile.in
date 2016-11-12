@@ -3,7 +3,7 @@ TARGET = simple_firewall
 ######################################################################
 # GCC and compilation options
 ######################################################################
-GCC = @CC@
+GCC = $(CC)
 GCC_OPT = -m64 -Wall -Werror
 GCC_OPT += -DNDEBUG -O3 -g -DNETSTAT -DINFO -DDBGERR -DDBGCERR
 GCC_OPT += $(DBG_OPT)

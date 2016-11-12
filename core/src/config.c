@@ -125,8 +125,8 @@ static int
 ReadItemValue(char *line, int llen, char *item, int ilen, char *value, int vlen)
 {
 	const char *end = &line[llen];
-	char *word;
-	int wlen;
+	char *word = NULL;
+	int wlen = 0;
 
 	if (DetectWord(line, llen, &word, &wlen) < 0 || wlen > ilen)
 		return -1;
