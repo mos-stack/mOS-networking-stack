@@ -722,6 +722,14 @@ elif [ "$1" == "--cleanup" ]; then
 	cd ..
     done
     cd ..
+    cd core/src
+    make clean > /dev/null 2> /dev/null
+    cd bpf
+    rm -rf *.o
+    cd ..
+    rm -rf .*.d
+    rm Makefile
+    cd ../..
     find ./samples/ -name 'Makefile' | xargs rm -f
     rm -f scripts/config.log scripts/config.status
 else

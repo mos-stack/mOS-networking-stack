@@ -623,6 +623,7 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+PCAP
 NETMAP
 PSIO
 DPDK
@@ -3804,6 +3805,9 @@ PSIO=0
 # Reset Netmap to 0
 NETMAP=0
 
+# Reset Pcap to 0
+PCAP=0
+
 
 # Enable dpdk
 # Check whether --enable-dpdk was given.
@@ -3849,7 +3853,10 @@ fi
 
 if test "$DPDK" == "0" && test "$PSIO" == "0" && test "$NETMAP" == "0"
 then
-        as_fn_error $? "Packet I/O library is missing. Please set either dpdk, netmap or psio as your I/O lib.I am choosing pcap as your I/O lib!" "$LINENO" 5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Packet I/O library is missing. Please set either dpdk, netmap or psio as your I/O lib.I am choosing pcap as your I/O lib!" >&5
+$as_echo "$as_me: WARNING: Packet I/O library is missing. Please set either dpdk, netmap or psio as your I/O lib.I am choosing pcap as your I/O lib!" >&2;}
+	PCAP=1
+
 fi
 
 ac_config_files="$ac_config_files ../core/src/Makefile"

@@ -38,6 +38,8 @@ AC_SUBST(DPDK, 0)
 AC_SUBST(PSIO, 0)
 # Reset Netmap to 0
 AC_SUBST(NETMAP, 0)
+# Reset Pcap to 0
+AC_SUBST(PCAP, 0)
 
 # Enable dpdk
 AC_ARG_ENABLE([dpdk],
@@ -68,7 +70,8 @@ AS_IF([test "x$enable_psio" = "xyes"], [
 
 if test "$DPDK" == "0" && test "$PSIO" == "0" && test "$NETMAP" == "0"
 then
-        AC_MSG_ERROR([Packet I/O library is missing. Please set either dpdk, netmap or psio as your I/O lib.I am choosing pcap as your I/O lib!])
+        AC_MSG_WARN([Packet I/O library is missing. Please set either dpdk, netmap or psio as your I/O lib.I am choosing pcap as your I/O lib!])
+	AC_SUBST(PCAP, 1)
 fi
 
 AC_OUTPUT(../core/src/Makefile)
