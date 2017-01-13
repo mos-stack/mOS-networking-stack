@@ -20,3 +20,8 @@ Pull requests and bug fixes are welcomed!
 
 ## Documentation
 Please visit http://mos.kaist.edu/ for more instructions.
+
+## Acknowledgment
+This project is supported by ICT Research and Development Program of MSIP/IITP,
+Korea, under Grant B0101-16-1368, [Development of an NFV-inspired networked
+switch and an operating system for multi-middlebox services].
