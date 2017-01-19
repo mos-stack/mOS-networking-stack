@@ -61,6 +61,8 @@ create_config()
     cd $CUR_DIR
     mkdir -p $2
     CONF_FILE=$2/mos.conf
+    CONF_MASTER_FILE=$2/mos-master.conf
+    CONF_SLAVE_FILE=$2/mos-slave.conf
     
     echo
     echo "----------------------------------------"
@@ -127,6 +129,7 @@ create_config()
 	sed -i -e 's/__coremask/0x0001/g' $CONF_FILE
 	sed -i -e 's/__num_memch//g' $CONF_FILE
 	sed -i -e 's/__forward/1/g' $CONF_FILE
+	sed -i -e 's/__multiprocess//g' $CONF_FILE
 
     elif [[ $1 == $FL_NETMAP ]]; then
 	if [ "$3" = "epserver" ] || [ "$3" = "epwget" ] ; then
@@ -156,6 +159,7 @@ create_config()
 	sed -i -e 's/__num_memch//g' $CONF_FILE
 	sed -i -e 's/__forward/1/g' $CONF_FILE	
 	sed -i -e 's/__app/'$3'/g' $CONF_FILE
+	sed -i -e 's/__multiprocess//g' $CONF_FILE
 
 	if [ "$3" = "nat" ] ; then
 	    sed -i -e 's/\# tcp_tw_interval = 30/tcp_tw_interval = 30/g' $CONF_FILE
@@ -163,6 +167,8 @@ create_config()
     else
 	if [ "$3" = "epserver" ] || [ "$3" = "epwget" ] ; then
 	    cat .end-template.conf > $CONF_FILE
+	    cat .end-template.conf > $CONF_MASTER_FILE
+	    cat .end-template.conf > $CONF_SLAVE_FILE
 	else
 	    cat .standalone-template.conf > $CONF_FILE
 	fi
@@ -193,10 +199,18 @@ create_config()
 	if [[ $1 == $FL_DPDK ]]; then
 	    FMT=$(printf 's/__num_memch/%snb_mem_channels = %d%s/g' '# number of memory channels per socket [mandatory for DPDK]\n\t' $NUM_MEMCH '\n')
 	    sed -i -e "$FMT" $CONF_FILE
+	if [ "$3" = "epserver" ] || [ "$3" = "epwget" ] ; then
+	    cp $CONF_FILE $CONF_MASTER_FILE
+	    cp $CONF_FILE $CONF_SLAVE_FILE
+	    sed -i -e 's/__multiprocess/multiprocess = 0 master/g' $CONF_MASTER_FILE
+	    sed -i -e 's/__multiprocess/multiprocess = slave/g' $CONF_SLAVE_FILE
+	fi
 	else
 	    echo "invalid function call 2"
 	    exit 1
-	fi	
+	fi
+
+	sed -i -e 's/__multiprocess//g' $CONF_FILE	
     fi
     echo
     cat $CONF_FILE
@@ -429,18 +443,18 @@ set_numa_pages()
     create_mnt_huge
 }
 
-# Uses dpdk_nic_bind.py to move devices to work with igb_uio
+# Uses dpdk-devbind.py to move devices to work with igb_uio
 bind_nics_to_igb_uio()
 {
     if  /sbin/lsmod  | grep -q igb_uio ; then
-	${RTE_SDK}/tools/dpdk_nic_bind.py --status
+	${RTE_SDK}/tools/dpdk-devbind.py --status
 	echo ""
 	echo "Enter PCI address of device(s) to bind to IGB UIO driver (e.g., \"04:00.0 04:00.1\")."
 	echo -n "> "
 	read PCI_PATH
 
 
-	sudo ${RTE_SDK}/tools/dpdk_nic_bind.py -b igb_uio $PCI_PATH && echo "OK"
+	sudo ${RTE_SDK}/tools/dpdk-devbind.py -b igb_uio $PCI_PATH && echo "OK"
     else
 	echo "# Please load the 'igb_uio' kernel module before querying or "
 	echo "# adjusting NIC device bindings"
@@ -448,7 +462,7 @@ bind_nics_to_igb_uio()
 }
 
 #
-# Uses dpdk_nic_bind.py to move devices to work with kernel drivers again
+# Uses dpdk-devbind.py to move devices to work with kernel drivers again
 #
 unbind_nics()
 {
@@ -461,14 +475,14 @@ unbind_nics()
 	fi
     done
 
-    ${RTE_SDK}/tools/dpdk_nic_bind.py --status
+    ${RTE_SDK}/tools/dpdk-devbind.py --status
     echo ""
     echo -n "Enter PCI address of device to unbind: "
     read PCI_PATH
     echo ""
     echo -n "Enter name of kernel driver to bind the device to: "
     read DRV
-    sudo ${RTE_SDK}/tools/dpdk_nic_bind.py -b $DRV $PCI_PATH && echo "OK"
+    sudo ${RTE_SDK}/tools/dpdk-devbind.py -b $DRV $PCI_PATH && echo "OK"
 }
 
 # Brings up the interface of DPDK devices up
@@ -632,7 +646,7 @@ if [ "$1" == "--compile-dpdk" ]; then
     fi
     # Build and install DPDK library
     export DPDK_DIR="drivers/dpdk"
-    export RTE_SDK="drivers/dpdk-16.04"
+    export RTE_SDK="drivers/dpdk-16.11"
     export RTE_TARGET="x86_64-native-linuxapp-gcc"
     export DESTDIR="."
     echo
@@ -658,7 +672,7 @@ elif [ "$1" == "--compile-netmap" ]; then
 
 elif [ "$1" == "--run-dpdk" ]; then
     export DPDK_DIR="drivers/dpdk"
-    export RTE_SDK="drivers/dpdk-16.04"
+    export RTE_SDK="drivers/dpdk-16.11"
     export RTE_TARGET="x86_64-native-linuxapp-gcc"
     while [ 1 ]; do
 	clear

@@ -1,4 +1,5 @@
 TARGET = epserver
+TARGETMP = epserver-mp
 
 ######################################################################
 # GCC and compilation options
@@ -32,7 +33,7 @@ __IO_LIB_ARGS
 
 ######################################################################
 
-default: $(TARGET)
+default: $(TARGET) $(TARGETMP)
 
 $(MTCP_TARGET):
 	cd $(MTCP_FLD)/src && make	
@@ -41,8 +42,12 @@ $(TARGET): $(MTCP_TARGET) $(TARGET).c $(CMN_DIR)/*.c ../../util/http_parsing.c
 	$(MSG) "   CC $<"
 	$(HIDE) $(GCC) $(GCC_OPT) -o $@ $^ $(MTCP_INC) $(CMN_INC) $(UTIL_INC) $(LIB_DIR) $(LIBS)
 
+$(TARGETMP): $(MTCP_TARGET) $(TARGETMP).c $(CMN_DIR)/*.c ../../util/http_parsing.c
+	$(MSG) "   CC $<"
+	$(HIDE) $(GCC) $(GCC_OPT) -o $@ $^ $(MTCP_INC) $(CMN_INC) $(UTIL_INC) $(LIB_DIR) $(LIBS)
+
 clean:
-	rm -rf *~ *.o $(TARGET) logs/*
+	rm -rf *~ *.o $(TARGET) $(TARGETMP) logs/*
 
 cleanall: clean
 	rm -rf Makefile

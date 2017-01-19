@@ -739,6 +739,8 @@ dpdk_load_module_lower_half(void)
 					ports_eth_addr[portid].addr_bytes[4],
 					ports_eth_addr[portid].addr_bytes[5]);
 #endif
+			/* only check for link status if the thread is master */
+			check_all_ports_link_status(g_config.mos->netdev_table->num, 0xFFFFFFFF);
 		}
 	} else { /* g_config.mos->multiprocess && !g_config.mos->multiprocess_is_master */
 		for (rxlcore_id = 0; rxlcore_id < g_config.mos->num_cores; rxlcore_id++) {
@@ -749,10 +751,13 @@ dpdk_load_module_lower_half(void)
 				rte_mempool_lookup(name);
 			if (pktmbuf_pool[rxlcore_id] == NULL)
 				rte_exit(EXIT_FAILURE, "Cannot init mbuf pool\n");
+			for (portid = 0; portid < g_config.mos->netdev_table->num; portid++)
+				cpu_qid_map[portid][rxlcore_id] = rxlcore_id;			
 		}
+		/* set 'num_queues' (used for GetRSSCPUCore() in util.c) */
+		num_queues = g_config.mos->num_cores;
 	}
 
-	check_all_ports_link_status(g_config.mos->netdev_table->num, 0xFFFFFFFF);
 }
 /*----------------------------------------------------------------------------*/
 io_module_func dpdk_module_func = {
