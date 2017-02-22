@@ -1,0 +1,103 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Fri Feb  3 21:10:01 2017 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>mtcp_set_uctx</title>
+
+</head>
+<body>
+
+<h1 align="center">mtcp_set_uctx</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mtcp_set_uctx
+&minus; set private per-flow user-context data</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;mos_api.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mtcp_set_uctx(mctx_t</b> <i>mctx</i><b>, int</b>
+<i>sockid</i><b>, void *</b><i>uctx</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_set_uctx</b>()
+can be used to associate flow-specific monitoring data to a
+flow record in the application layer. The flow-specific data
+is stored with the socket that can referred to by the
+<i>sockid</i> argument. The private data can be stored as a
+void *. It is the responsibility of the user to free up the
+private data (if it is dynamically allocated from memory)
+when the flow record gets deleted from the stack (due to,
+e.g., connection termination).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>mtcp_set_uctx</b>() call takes an additional argument
+named <i>mctx</i> that represents the per-core mTCP context
+in an application (see <b>mtcp_create_context()</b> for
+details).</p>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mOS development
+team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_socket</b>(),
+<b>mtcp_get_uctx</b>(),</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of mOS release 0.3 <i>docs</i> section. A description
+of the project, and information about reporting bugs, can be
+found at http://mos.kaist.edu/.</p>
+<hr>
+</body>
+</html>

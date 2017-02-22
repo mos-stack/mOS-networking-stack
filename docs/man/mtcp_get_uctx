@@ -1,0 +1,71 @@
+.TH mtcp_get_uctx 3 2017-02-02 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_get_uctx \- get private per-flow user-context data
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "int mtcp_get_uctx(mctx_t " mctx ", int " sockid );
+
+.SH DESCRIPTION
+.BR mtcp_get_uctx () 
+can be used to retrieve flow-specific monitoring data to
+a flow record in the application layer. It is generally used
+in tandem with
+.BR mtcp_set_uctx () .
+The flow-specific data is stored with the socket that can
+referred to by the
+.I "sockid"
+argument.
+The private data can be stored as a void *. It is the
+responsibility of the user to free up the private data (if it
+is dynamically allocated from memory) when the flow
+record gets deleted from the stack (due to, e.g., connection
+termination).
+
+The 
+.BR mtcp_get_uctx ()
+call takes an additional argument named 
+.I "mctx"
+that represents the per-core mTCP context in an application
+(see
+.BR mtcp_create_context()
+for details).
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns pointer to the private data as void * on success; NULL on failure. In case
+of failure,
+.I "errno"
+is set appropriately.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 10
+.B "EACCES"
+.I "mctx"
+is not a valid.
+
+.TP 10
+.B "EBADF"
+.I "sockid"
+is not a valid socket descriptor for binding to an address.
+
+.TP 10
+.B "EPERM"
+The user does not have permission to access the data.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_socket (),
+.BR mtcp_set_uctx (),
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

@@ -1,0 +1,266 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Thu Feb  2 01:56:08 2017 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>mtcp_socket</title>
+
+</head>
+<body>
+
+<h1 align="center">mtcp_socket</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mtcp_socket
+&minus; instantiate an mTCP socket for communication or
+monitoring</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;mtcp_api.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mtcp_socket(mctx_t</b> <i>mctx</i><b>, int</b>
+<i>domain</i><b>, int</b> <i>type</i><b>, int</b>
+<i>protocol</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_socket</b>()
+can be used to create either a communication endpoint or a
+middlebox viewpoint for mTCP-based network connection. In
+many ways, it behaves similar to a BSD socket. An
+<b>mtcp_socket</b>() call takes an additional argument named
+<i>mctx</i> that represents the per-core mTCP context in an
+application (see <b>mtcp_create_context()</b> for
+details).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>domain</i> argument is used to specify a communication
+domain; in mTCP, the only available protocol family for the
+domain is <b>AF_INET</b> which represents IPv4 Internet
+protocol.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The socket has
+the indicated <i>type ,</i> which specifies the
+communication semantics. Currently defined types in mTCP
+are:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="35%">
+
+
+<p><b>SOCK_STREAM</b></p></td>
+<td width="3%"></td>
+<td width="51%">
+
+
+<p>Provides sequenced, reliable, full-duplex,
+connection-based byte streams.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="35%">
+
+
+<p><b>MOS_SOCK_MONITOR_STREAM</b></p></td>
+<td width="3%"></td>
+<td width="51%">
+
+
+<p>Provides a middlebox viewpoint for ongoing
+connection-oriented flows.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="35%">
+
+
+<p><b>MOS_SOCK_MONITOR_RAW</b></p></td>
+<td width="3%"></td>
+<td width="51%">
+
+
+<p>Provides a middlebox viewpoint for connection-less
+flows. This can be used as a tap to glean unsynchronized TCP
+packets (no connection handshakes) or any other IP
+datagrams.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>protocol</i> argument represents the specific protocol ID
+to be used with the socket. mTCP assumes this argument to be
+0 (since it only supports single-protocol sockets).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Sockets of type
+<b>SOCK_STREAM</b> represent full-duplex bytestreams. A
+stream socket must be in <b>ESTABLISHED</b> TCP state before
+data can be sent or received on it. A connection to another
+peer endpoint can be created with an <b>mtcp_connect()</b>
+call. Once connected, data may be exchanged using
+<b>mtcp_read()</b> and <b>mtcp_write()</b> calls. When a
+session needs to be terminated, <b>mtcp_close()</b> can be
+called. Socket operations can be manipulated using socket
+level options via <b>mtcp_setsockopt()</b> and
+<b>mtcp_getsockopt()</b> function calls. mTCP sockets run in
+non-blocking mode by default.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Sockets of type
+<b>MOS_SOCK_MONITOR_STREAM</b> represent middlebox viewpoint
+of full-duplex bytestreams. A monitoring stream socket must
+be in <b>ESTABLISHED</b> TCP state before TCP bytestreams
+can be snooped from the TCP ring buffers of either client or
+server TCP emulated stacks using either <b>mtcp_peek()</b>
+or <b>mtcp_ppeek()</b> functions. A stream monitoring socket
+can be bound with a connection filter using
+<b>mtcp_bind_monitor_filter()</b> function. The user can use
+<b>mtcp_register_callback()</b> function to register the
+socket with relevant mOS events. These can either be
+built-in events or user-defined (custom) events. Like
+<b>SOCK_STREAM</b> sockets, operations can be manipulated
+using socket level options via <b>mtcp_setsockopt()</b> and
+<b>mtcp_getsockopt()</b> function calls. A call to
+<b>mtcp_close()</b> function unregisters all flow events for
+the socket, but it does not terminate the ongoing
+connection.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Sockets of type
+<b>MOS_SOCK_MONITOR_RAW</b> can be used to monitor network
+traffic without connection semantics. Only packet-based
+functions such as <b>mtcp_getlastpkt()</b> can be utilized
+using these sockets.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Returns an mTCP
+descriptor ID on success; -1 on failure. In case of failure,
+<i>errno</i> is set appropriately. Please note that each
+mTCP context (referred to by <i>mctx</i> ) creates its own
+dedicated pool of sockets.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="18%">
+
+
+<p style="margin-top: 1em"><b>EACCES</b></p></td>
+<td width="5%"></td>
+<td width="66%">
+
+
+<p style="margin-top: 1em"><i>mctx</i> is not valid.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="18%">
+
+
+<p><b>EAFNOSUPPORT</b></p></td>
+<td width="5%"></td>
+<td width="66%">
+
+
+<p><i>domain</i> is not supported.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="18%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="5%"></td>
+<td width="66%">
+
+
+<p>The socket <i>type</i> is invalid.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="18%">
+
+
+<p><b>ENFILE</b></p></td>
+<td width="5%"></td>
+<td width="66%">
+
+
+<p>No socket descriptor is available in the pool at the
+moment.</p> </td></tr>
+</table>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mOS development
+team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_bind</b>(),
+<b>mtcp_listen</b>(), <b>mtcp_accept</b>(),
+<b>mtcp_connect</b>(), <b>mtcp_read</b>(),
+<b>mtcp_write</b>(), <b>mtcp_peek</b>(),
+<b>mtcp_ppeek</b>(), <b>mtcp_bind_monitor_filter</b>(),
+<b>mtcp_register_callback</b>(),
+<b>mtcp_getlastpkt</b>()</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of mOS release 0.3 <i>docs</i> section. A description
+of the project, and information about reporting bugs, can be
+found at http://mos.kaist.edu/.</p>
+<hr>
+</body>
+</html>

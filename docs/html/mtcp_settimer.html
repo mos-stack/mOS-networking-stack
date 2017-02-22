@@ -1,0 +1,114 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Sun Feb  5 16:09:43 2017 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>mtcp_settimer</title>
+
+</head>
+<body>
+
+<h1 align="center">mtcp_settimer</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mtcp_settimer
+&minus; register user&rsquo;s timer-based callback
+handler</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;mos_api.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mtcp_settimer(mctx_t</b> <i>mctx</i><b>, int</b>
+<i>id</i><b>, struct timeval *</b><i>timeout</i><b>,
+callback_t</b> <i>cb</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_settimer</b>()
+can be used to register callback handler function, <i>cb
+,</i> that is invoked after a time interval of
+<i>timeout</i> microseconds. Note that this callback is a
+one time registration and <i>cb</i> (see
+<b>mtcp_register_callback</b>() for definition) is called
+only once when <i>timeout</i> period expires. The <i>id</i>
+argument is a unique identifier that is passed to <i>cb</i>
+as one of the function arguments.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_settimer</b>()
+call takes an additional argument named <i>mctx</i> that
+represents the per-core mTCP context in an application (see
+<b>mtcp_create_context()</b> for details).</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success 0 is
+returned; -1 on failure.</p>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mOS development
+team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_register_callback</b>(),
+<b>mtcp_socket</b>(),</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of mOS release 0.3 <i>docs</i> section. A description
+of the project, and information about reporting bugs, can be
+found at http://mos.kaist.edu/.</p>
+<hr>
+</body>
+</html>

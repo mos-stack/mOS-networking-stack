@@ -1384,13 +1384,13 @@ DoActionEndTCPPacket(mtcp_manager_t mtcp, struct tcp_stream *cur_stream,
 							pctx->p.iph->daddr, pctx->p.tcph->dest,
 							pctx->p.iph->saddr, pctx->p.tcph->source, 
 							0, pctx->p.seq + 1, 0, TCP_FLAG_RST | TCP_FLAG_ACK, 
-							NULL, 0, pctx->p.cur_ts, 0);
+							NULL, 0, pctx->p.cur_ts, 0, 0);
 				else
 					SendTCPPacketStandalone(mtcp, 
 							pctx->p.iph->daddr, pctx->p.tcph->dest,
 							pctx->p.iph->saddr, pctx->p.tcph->source, 
 							pctx->p.ack_seq, 0, 0, TCP_FLAG_RST | TCP_FLAG_ACK, 
-							NULL, 0, pctx->p.cur_ts, 0);
+							NULL, 0, pctx->p.cur_ts, 0, 0);
 				break;
 			case MOS_ACT_DESTROY:
 				DestroyTCPStream(mtcp, cur_stream);

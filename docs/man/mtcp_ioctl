@@ -1,0 +1,85 @@
+.TH mtcp_ioctl 3 2017-02-02 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_ioctl \- control mTCP socket
+.SH SYNOPSIS
+.B #include <mtcp_api.h>
+.sp
+.BI "int mtcp_ioctl(mctx_t " mctx ", int " sockid ", int " request ", void * " argp );
+
+.SH DESCRIPTION
+.BR mtcp_ioctl ()
+can be used to retrieve certain attributes from an mTCP (of type SOCK_STREAM)
+socket via descriptor id,
+.I "sockid." 
+The third argument,
+.I "request"
+is used by the caller to fetch the attribute type. The fourth argument,
+.I "argp"
+is an untyped pointer to memory that
+.BR mtcp_ioctl ()
+uses for storing the returning value.
+
+Currently,
+.BR mtcp_ioctl ()
+only supports 1 type of
+.I "request." 
+
+.TP 12
+.B FIONREAD
+The number of bytes that can be read from the receive buffer when
+.BR mtcp_read ()
+is called. The user should pass 
+.I "argp"
+pointing to a memory region that can store a variable of size
+.BR ssize_t .
+
+.PP
+
+Note that
+.BR "mtcp_ioctl()"
+assumes that the CPU core-id (as set inside
+.I "mctx"
+structure) will be used as the value for NIC queue-id,
+which the mTCP context will eventually access during 
+its operation. For example, mTCP context running on
+core 3 will read traffic from NIC hardware queue-id 3.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns 0 on success; -1 on failure. In case
+of failure,
+.I "errno"
+is set appropriately.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 12
+.B EACCES
+.I "mctx"
+is invalid
+
+.TP 12
+.B EBADF
+.I "sockid"
+is invalid.
+
+.TP 12
+.B "EFAULT"
+.I "argp"
+is NULL.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_getsockopt (),
+.BR mtcp_socket (),
+.BR mtcp_read ()
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

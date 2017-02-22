@@ -1,0 +1,171 @@
+.TH mtcp_socket 3 2017-02-01 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_socket \- instantiate an mTCP socket for communication or monitoring 
+.SH SYNOPSIS
+.B #include <mtcp_api.h>
+.sp
+.BI "int mtcp_socket(mctx_t " mctx ", int " domain ", int " type ", int " protocol );
+
+.SH DESCRIPTION
+.BR mtcp_socket () 
+can be used to create either a communication endpoint or a
+middlebox viewpoint for mTCP-based network connection. In
+many ways, it behaves similar to a BSD socket. An 
+.BR mtcp_socket ()
+call takes an additional argument named 
+.I "mctx"
+that represents the per-core mTCP context in an application
+(see
+.BR mtcp_create_context()
+for details).
+
+The
+.I "domain"
+argument is used to specify a communication domain; in mTCP,
+the only available protocol family for the domain is
+.BR AF_INET
+which represents IPv4 Internet protocol.
+
+The socket has the indicated
+.I "type",
+which specifies the communication semantics. Currently
+defined types in mTCP are:
+
+.TP 25
+.B "SOCK_STREAM"
+Provides sequenced, reliable, full-duplex, connection-based byte
+streams.
+
+.TP 25
+.B "MOS_SOCK_MONITOR_STREAM"
+Provides a middlebox viewpoint for ongoing connection-oriented
+flows.
+
+.TP 25
+.B "MOS_SOCK_MONITOR_RAW"
+Provides a middlebox viewpoint for connection-less flows. This
+can be used as a tap to glean unsynchronized TCP packets (no
+connection handshakes) or any other IP datagrams.
+.PP
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+The
+.I "protocol"
+argument represents the specific protocol ID to be used with the
+socket. mTCP assumes this argument to be 0 (since it only supports
+single-protocol sockets).
+
+Sockets of type
+.BR SOCK_STREAM
+represent full-duplex bytestreams. A stream socket must be in
+.BR ESTABLISHED
+TCP state before data can be sent or received on it. A connection
+to another peer endpoint can be created with an
+.BR mtcp_connect()
+call. Once connected, data may be exchanged using
+.BR mtcp_read()
+and
+.BR mtcp_write()
+calls. When a session needs to be terminated,
+.BR mtcp_close()
+can be called. Socket operations can be manipulated using socket
+level options via
+.BR mtcp_setsockopt()
+and
+.BR mtcp_getsockopt()
+function calls. mTCP sockets run in non-blocking mode by
+default.
+
+Sockets of type
+.BR MOS_SOCK_MONITOR_STREAM
+represent middlebox viewpoint of full-duplex bytestreams. A
+monitoring stream socket must be in
+.BR ESTABLISHED
+TCP state before TCP bytestreams can be snooped from the
+TCP ring buffers of either client or server TCP emulated stacks
+using either
+.BR mtcp_peek()
+or
+.BR mtcp_ppeek()
+functions. A stream monitoring socket can be bound with a
+connection filter using
+.BR mtcp_bind_monitor_filter()
+function. The user can use
+.BR mtcp_register_callback()
+function to register the socket with relevant mOS events. These
+can either be built-in events or user-defined (custom) events.
+Like
+.BR SOCK_STREAM
+sockets, operations can be manipulated using socket level options
+via
+.BR mtcp_setsockopt()
+and
+.BR mtcp_getsockopt()
+function calls. A call to
+.BR mtcp_close()
+function unregisters all flow events for the socket, but it does
+not terminate the ongoing connection.
+
+Sockets of type
+.BR MOS_SOCK_MONITOR_RAW
+can be used to monitor network traffic without connection
+semantics. Only packet-based functions such as
+.BR mtcp_getlastpkt()
+can be utilized using these sockets.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns an mTCP descriptor ID on success; -1 on failure. In case
+of failure,
+.I "errno"
+is set appropriately. Please note that each mTCP context (referred
+to by
+.I "mctx"
+) creates its own dedicated pool of sockets.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 15
+.B "EACCES"
+.I "mctx"
+is not valid.
+
+.TP 15
+.B "EAFNOSUPPORT"
+.I "domain"
+is not supported.
+
+.TP 15
+.B "EINVAL"
+The socket
+.I "type"
+is invalid.
+
+.TP 15
+.B "ENFILE"
+No socket descriptor is available in the pool at the moment.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_bind (),
+.BR mtcp_listen (),
+.BR mtcp_accept (),
+.BR mtcp_connect (),
+.BR mtcp_read (),
+.BR mtcp_write (),
+.BR mtcp_peek (),
+.BR mtcp_ppeek (),
+.BR mtcp_bind_monitor_filter (),
+.BR mtcp_register_callback (),
+.BR mtcp_getlastpkt ()
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

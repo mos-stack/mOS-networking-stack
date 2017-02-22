@@ -146,7 +146,7 @@ SendTCPPacketStandalone(struct mtcp_manager *mtcp,
 		uint32_t saddr, uint16_t sport, uint32_t daddr, uint16_t dport, 
 		uint32_t seq, uint32_t ack_seq, uint16_t window, uint8_t flags, 
 		uint8_t *payload, uint16_t payloadlen, 
-		uint32_t cur_ts, uint32_t echo_ts)
+		uint32_t cur_ts, uint32_t echo_ts, uint16_t ip_id)
 {
 	struct tcphdr *tcph;
 	uint8_t *tcpopt;

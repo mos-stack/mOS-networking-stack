@@ -1,0 +1,184 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Feb  7 13:27:07 2017 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>mtcp_ioctl</title>
+
+</head>
+<body>
+
+<h1 align="center">mtcp_ioctl</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mtcp_ioctl
+&minus; control mTCP socket</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;mtcp_api.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mtcp_ioctl(mctx_t</b> <i>mctx</i><b>, int</b>
+<i>sockid</i><b>, int</b> <i>request</i><b>, void *</b>
+<i>argp</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_ioctl</b>()
+can be used to retrieve certain attributes from an mTCP (of
+type SOCK_STREAM) socket via descriptor id, <i>sockid.</i>
+The third argument, <i>request</i> is used by the caller to
+fetch the attribute type. The fourth argument, <i>argp</i>
+is an untyped pointer to memory that <b>mtcp_ioctl</b>()
+uses for storing the returning value.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Currently,
+<b>mtcp_ioctl</b>() only supports 1 type of
+<i>request.</i></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><b>FIONREAD</b></p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>The number of bytes that can be read from the receive
+buffer when <b>mtcp_read</b>() is called. The user should
+pass <i>argp</i> pointing to a memory region that can store
+a variable of size <b>ssize_t</b>.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+<b>mtcp_ioctl()</b> assumes that the CPU core-id (as set
+inside <i>mctx</i> structure) will be used as the value for
+NIC queue-id, which the mTCP context will eventually access
+during its operation. For example, mTCP context running on
+core 3 will read traffic from NIC hardware queue-id 3.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Returns 0 on
+success; -1 on failure. In case of failure, <i>errno</i> is
+set appropriately.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EACCES</b></p></td>
+<td width="9%"></td>
+<td width="28%">
+
+
+<p style="margin-top: 1em"><i>mctx</i> is invalid</p></td>
+<td width="43%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EBADF</b></p></td>
+<td width="9%"></td>
+<td width="28%">
+
+
+<p><i>sockid</i> is invalid.</p></td>
+<td width="43%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="9%"></td>
+<td width="28%">
+
+
+<p><i>argp</i> is NULL.</p></td>
+<td width="43%">
+</td></tr>
+</table>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mOS development
+team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_getsockopt</b>(),
+<b>mtcp_socket</b>(), <b>mtcp_read</b>()</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of mOS release 0.3 <i>docs</i> section. A description
+of the project, and information about reporting bugs, can be
+found at http://mos.kaist.edu/.</p>
+<hr>
+</body>
+</html>

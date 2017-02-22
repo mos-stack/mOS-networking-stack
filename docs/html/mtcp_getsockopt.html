@@ -1,0 +1,381 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Thu Feb  2 22:36:46 2017 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>mtcp_getsockopt</title>
+
+</head>
+<body>
+
+<h1 align="center">mtcp_getsockopt</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">mtcp_getsockopt
+&minus; get options on mTCP/mOS sockets</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;mtcp_api.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mtcp_getsockopt(mctx_t</b> <i>mctx</i><b>, int</b>
+<i>sockid</i><b>, int</b> <i>level</i><b>, int</b>
+<i>optname</i><b>, const void *</b><i>optval</i><b>,
+socklen_t *</b><i>optlen</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_getsockopt</b>()
+manipulate options for the socket referred to by the
+<i>sockid</i> descriptor. These options may exist at
+multiple protocol levels. When manipulating socket options,
+the level at which the options resides and the name of the
+option must be specified. A user can use <b>SOL_SOCKET</b>
+<i>level</i> to adjust these options for mTCP endpoint
+applications; while <b>SOL_MONSOCKET</b> <i>level</i> can be
+used to adjust options for monitoring sockets.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<b>mtcp_getsockopt()</b> <i>optval</i> identifies the buffer
+in which the value for the requested option is to be
+returned and the <i>optlen</i> argument is updated to
+indicate the actual size of the <i>optval</i> returned. It
+is the user&rsquo;s responsibility to allocate memory for
+both <i>optval</i> and <i>optlen</i> arguments.</p>
+
+<p style="margin-left:11%; margin-top: 1em">At the moment,
+mOS only provides one <i>optname</i> named <b>SO_ERROR</b>
+that can only be used for <b>mtcp_getsockopt()</b> function
+for SOL_SOCKET socket <i>level</i> with the specified option
+name returns the most recently recorded socket error for the
+particular connection (specific to the <i>sockid</i> socket
+descriptor).</p>
+
+<p style="margin-left:11%; margin-top: 1em">SOL_MONSOCKET
+socket <i>level</i> can be used by <b>mtcp_getsockopt()</b>
+to retrieve a number of socket options.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="29%">
+
+
+<p style="margin-top: 1em">MOS_FRAGINFO_CLIBUF</p></td>
+<td width="9%"></td>
+<td width="51%">
+
+
+<p style="margin-top: 1em">Gives back offsets to fragments
+(non-contiguous data segments) currently stored in
+client&rsquo;s TCP ring buffer. The <i>optval</i> is an
+array of struct tcp_ring_fragment which is defined as:</p></td></tr>
+</table>
+
+<p style="margin-left:49%; margin-top: 1em">struct
+tcp_ring_fragment { <br>
+uint64_t offset; <br>
+uint32_t len; <br>
+}</p>
+
+<p style="margin-left:49%; margin-top: 1em">where offset
+flow data starting from client&rsquo;s TCP SYN sequence
+number, and len is the length of the tcp_ring_fragment. The
+<i>optval</i> holds the size of the array (in terms of the
+number of elements).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="29%">
+
+
+<p style="margin-top: 1em">MOS_FRAGINFO_SVRBUF</p></td>
+<td width="9%"></td>
+<td width="51%">
+
+
+<p style="margin-top: 1em">Gives back offsets to fragments
+(non-contiguous data segments) currently stored in
+server&rsquo;s TCP ring buffer. The <i>optval</i> is the
+array of struct tcp_ring_fragment</p></td></tr>
+</table>
+
+<p style="margin-left:49%; margin-top: 1em">where offset
+flow data starting from server&rsquo;s TCP SYN sequence
+number, and len is the length of the tcp_ring_fragment. The
+<i>optlen</i> holds the size of the array (in terms of the
+number of elements).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="23%">
+
+
+<p style="margin-top: 1em">MOS_INFO_CLIBUF</p></td>
+<td width="15%"></td>
+<td width="51%">
+
+
+<p style="margin-top: 1em">Returns meta-data regarding the
+client&rsquo;s TCP ring buffer. This information is returned
+in the form of <i>optval</i> which is passed as struct
+tcp_buf_info.</p> </td></tr>
+</table>
+
+<p style="margin-left:49%; margin-top: 1em">struct
+tcp_buf_info { <br>
+/* The initial TCP sequence number <br>
+of TCP ring buffer. */ <br>
+uint32_t tcpbi_init_seq;</p>
+
+<p style="margin-left:49%; margin-top: 1em">/* TCP sequence
+number of the &rsquo;last <br>
+byte of payload that has already <br>
+been read by the end application&rsquo; <br>
+(applies in the case of embedded <br>
+monitor setup) */ <br>
+uint32_t tcpbi_last_byte_read;</p>
+
+<p style="margin-left:49%; margin-top: 1em">/* TCP sequence
+number of the &rsquo;last <br>
+byte of the payload that is <br>
+currently buffered and needs to <br>
+be read by the end application&rsquo; <br>
+(applies in the case of embedded <br>
+monitor setup). In case of standalone <br>
+monitors, tcpbi_last_byte_read = <br>
+tcpbi_next_byte_expected */ <br>
+uint32_t tcpbi_next_byte_expected;</p>
+
+<p style="margin-left:49%; margin-top: 1em">/* TCP sequence
+number of the &rsquo;last <br>
+byte of the payload that is <br>
+currently stored&rsquo; in the TCP <br>
+ring buffer. This value may be <br>
+greater than tcpbi_next_byte_expected <br>
+if packets arrive out of order. */ <br>
+uint32_t tcpbi_last_byte_received; <br>
+}</p>
+
+<p style="margin-left:49%; margin-top: 1em">The
+<i>optlen</i> value contains the sizeof(struct
+tcp_buf_info).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p style="margin-top: 1em">MOS_INFO_SVRBUF</p></td>
+<td width="12%"></td>
+<td width="51%">
+
+
+<p style="margin-top: 1em">Returns meta-data regarding the
+server&rsquo;s TCP ring buffer. This information is returned
+in the form of <i>optval</i> which is passed as struct
+tcp_buf_info. The <i>optlen</i> value contains the
+sizeof(struct tcp_buf_info).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p>MOS_TCP_STATE_CLI</p></td>
+<td width="12%"></td>
+<td width="51%">
+
+
+<p>Returns the current emulated state of the client. The
+<i>optval</i> argument is a pointer to an int whereas the
+<i>optlen</i> argument contains the sizeof(int). The optval
+returns a value of type enum tcpstate which can carry any
+one of the following states.</p></td></tr>
+</table>
+
+<p style="margin-left:49%; margin-top: 1em">enum tcpstate {
+<br>
+TCP_CLOSED = 0, <br>
+TCP_LISTEN, <br>
+TCP_SYN_SENT, <br>
+TCP_SYN_RCVD, <br>
+TCP_ESTABLISHED, <br>
+TCP_FIN_WAIT_1, <br>
+TCP_FINE_WAIT_2, <br>
+TCP_CLOSE_WAIT, <br>
+TCP_CLOSING, <br>
+TCP_LAST_ACK, <br>
+TCP_TIME_WAIT <br>
+}</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p style="margin-top: 1em">MOS_TCP_STATE_SVR</p></td>
+<td width="12%"></td>
+<td width="51%">
+
+
+<p style="margin-top: 1em">Returns the current emulated
+state of the server. The <i>optval</i> argument is a pointer
+to an int whereas the <i>optlen</i> argument contains the
+sizeof(int). The optval returns a value of type enum
+tcpstate.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Both the
+functions take an additional argument named <i>mctx</i> that
+represent the per-core mTCP context in an application (see
+<b>mtcp_create_context()</b> for details).</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Returns 0 on
+success; -1 on failure. In case of failure, <i>errno</i> is
+set appropriately.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p style="margin-top: 1em"><b>EACCES</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p style="margin-top: 1em"><i>mctx</i> is not valid.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><b>EBADF</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p><i>sockid</i> is not a valid socket descriptor.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><b>ENOTSOCK</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>The socket referred to by <i>sockid</i> is not
+valid.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><b>ENOSYS</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>Either the <i>level</i> or the <i>optname</i> is not
+implemented.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>Permission to access a socket option is denied.</p></td></tr>
+</table>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:22%; margin-top: 1em">mOS development
+team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_socket</b>(),
+<b>mtcp_setsockopt</b>()</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of mOS release 0.3 <i>docs</i> section. A description
+of the project, and information about reporting bugs, can be
+found at http://mos.kaist.edu/.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,56 @@
+.TH mtcp_settimer 3 2017-02-02 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_settimer \- register user's timer-based callback handler
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "int mtcp_settimer(mctx_t " mctx ", int " id ", struct timeval *" timeout ", callback_t " cb );
+
+.SH DESCRIPTION
+.BR mtcp_settimer ()
+can be used to register callback handler function,
+.I "cb",
+that is invoked after a time interval of
+.I "timeout"
+microseconds. Note that this callback is a one time
+registration and
+.I "cb"
+(see
+.BR mtcp_register_callback ()
+for definition) is called only once when
+.I "timeout"
+period expires. The
+.I "id"
+argument is a unique identifier that is passed to
+.I "cb"
+as one of the function arguments.
+
+.BR mtcp_settimer ()
+call takes an additional argument named 
+.I "mctx"
+that represents the per-core mTCP context in an application
+(see
+.BR mtcp_create_context()
+for details).
+
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+On success 0 is returned; -1 on failure.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_register_callback (),
+.BR mtcp_socket (),
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

@@ -1,0 +1,199 @@
+.TH mtcp_init 3 2017-02-02 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_init \- initialize the mOS stack
+.SH SYNOPSIS
+.B #include <mtcp_api.h>
+.sp
+.BI "int mtcp_init(char *" "config_file" );
+
+.SH DESCRIPTION
+.BR mtcp_init () 
+call is used to set the stack parameters of an mOS-based
+application. These parameters are loaded inside the process 
+via a startup configuration file,
+.I config_file.
+A developer is required to first call
+.BR mtcp_init ()
+function before he/she can invoke any follow-up mOS functions in
+his/her application.
+
+A typical 
+.I config_file
+is composed of at least two mOS configuration blocks. The app block
+sets the configuration parameters of the application that
+employs the underlying mOS stack. A typical instance of an app
+block is illustrated below.
+
+ #######################
+ # APPLICATION OPTIONS #
+ #######################
+ # application to run
+ application {
+        type = end
+        run = epwget
+        core_mask = 0x000F
+ }
+
+A user can populate the app block with the following
+parameters:
+
+.TP 17
+.IP "type"
+The type of application that the user wants to run. An application can either
+be an endpoint application ('end') such as an mTCP client or mTCP server, or
+be a middlebox application ('monitor').
+
+.IP "run"
+The name of the binary to execute.
+
+.IP "core_mask"
+The CPU bitmask where you want to run the application. The mask 0x000F denotes
+that the user wants to run a single-process, 4-threaded application on the first
+four cores of the CPU (CPU 0~3).
+
+.PP
+
+The user can run one or more monitoring applications at the same time.
+
+A mos block adjusts the internal parameters of the mOS stack. 
+
+ #######################
+ # MOS-RELATED OPTIONS #
+ #######################
+
+ mos {
+             forward = 1
+
+             #######################
+             ##### I/O OPTIONS #####
+             #######################
+             # number of memory channels per socket [mandatory for DPDK]
+             nb_mem_channels = 4
+
+             # devices used for MOS applications [mandatory]
+             netdev {
+                     dpdk0 0x000F
+                     dpdk1 0x000F
+             }
+
+             #######################
+             ### LOGGING OPTIONS ###
+             #######################
+             # NICs to print network statistics per second
+             # if enabled, mTCP will print xx Gbps and xx pps for RX and TX
+             stat_print = dpdk0 dpdk1
+
+             # A directory contains MOS system log files
+             mos_log = logs/
+
+             # dpdk0 and dpdk1 will forward traffic in either direction
+             nic_forward_table {
+                     dpdk0 dpdk1
+             }
+
+ }
+
+A user can populate an mOS configuration block with the following
+parameters:
+
+.TP 23
+.IP "forward"
+Setting this option to 1 enables packet forwarding (for middlebox
+operations). Keep this value to 0 for endpoint mTCP applications.
+
+.IP "nb_mem_channels"
+(Mandatory for DPDK) nb_mem_channels parameter specifies the number
+of memory channels per CPU socket. Please refer to DPDK user guide,
+on tuning this parameter for performance optimizations.
+
+.IP "netdev"
+netdev parameter block specifies the network interfaces (or device
+ports) used for mOS applications. Each line contains the mapping of
+a network interface and CPU core mask. In the example above, it uses
+two DPDK-assisted network interfaces (dpdk0 and dpdk1), and CPU
+cores 0~3 receive/transmit traffic from/to the first 4 (0~3)
+hardware queues of the NIC. We program our DPDK driver to use
+symmetric RSS algorithm to distribute traffic across the cores. This
+ensures that the same CPU gets to examine packets of both flows of
+the connection.
+
+.IP "stat_print"
+stat_print parameter specifies the network interfaces which the
+application is interested in displaying runtime monitor statistics.
+
+.IP "mos_log"
+mos_log parameter specifies the path to a directory where the mOS
+system writes extra logging data.
+
+.IP "nic_forward_table"
+nic_forward_table parameter block specifies the static Ethernet
+traffic forwarding rules when the mOS middlebox application is set
+in inline mode (Running Monitor Applications in Inline Mode). If
+enabled, each line accepts a pair of DPDK-registered NIC interfaces
+via which the traffic can later be forwarded in either direction.
+Each interface should have one-to-one mapping with another. In the
+example above, traffic is switched from dpdk0 to dpdk1 and vice
+versa. The middlebox is configured as a 'bump-in-the-wire'.
+
+.IP "max_concurrency"
+max_concurrency specifies the maximum number of concurrent flows a
+middlebox can examine per CPU core. This parameter is used for
+preallocating the memory for flows. [default value: 100000]
+
+.IP "no_ring_buffers"
+no_ring_buffers determines whether the TCP ring buffer should be
+disabled. For mOS endpoint (mTCP) applications, mOS always require
+the socket buffers for the application. For middlebox applications,
+you can disable the receive-side socket buffer by putting
+no_ring_buffers = 1. [default value: 0 (ring buffer is enabled by default)]
+
+.IP "rmem_size"
+Specifies the size of receive buffer per socket in bytes
+[default value: 8192 B].
+
+.IP "wmem_size"
+Specifies the size of send buffer per socket in bytes [default value: 8192 B].
+
+.IP "tcp_tw_interval"
+Specifies the TCP timewait interval value in seconds. TCP timewait
+interval is the allowed time for a connection to be in the TIME_WAIT
+state. For mOS endpoint (mTCP) applications, user can set it as an
+arbitrary value larger than 0 to guarantee graceful shutdown. For
+monitoring applications, the user may set it to 0 if she is not
+interested in monitoring the flow after TIME_WAIT state.
+[default value: 0s]
+
+.IP "tcp_timeout"
+Specifies the TCP timeout value in seconds. This parameter determines
+the maximum allowed time for any flows to exist without any packet reception.
+In other words, mOS middlebox stops monitoring the connection after
+tcp_timeout idle period. You can set tcp_timeout = -1 to disable the
+timeout checking. For mOS endpoint (mTCP) applications, tcp_timeout
+serves as a timeout period for connections that are in active open
+states (SYN_SENT states). [default value: 30s]
+
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns 0 on success; -1 on failure.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""".
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH NOTES
+See 
+.I "http://mos.kaist.edu/guide/walkthrough/05_configuration.html"
+to view example startup mOS configuration file.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_destroy ()
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

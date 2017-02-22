@@ -1,0 +1,232 @@
+.TH mtcp_getsockopt 3 2017-02-02 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_getsockopt \- get options on mTCP/mOS sockets
+.SH SYNOPSIS
+.B #include <mtcp_api.h>
+.sp
+
+.BI "int mtcp_getsockopt(mctx_t " mctx ", int " sockid ", int " level ", int " optname ", const void *" optval ", socklen_t *" optlen );
+
+.SH DESCRIPTION
+.BR mtcp_getsockopt ()
+manipulate options for the socket referred to by the
+.I "sockid"
+descriptor. These options may exist at multiple protocol
+levels. When manipulating socket options, the level at
+which the options resides and the name of the option
+must be specified. A user can use
+.BR "SOL_SOCKET"
+.I "level"
+to adjust these options for mTCP endpoint applications;
+while
+.BR "SOL_MONSOCKET"
+.I "level"
+can be used to adjust options for monitoring sockets.
+
+For
+.BR mtcp_getsockopt()
+.I "optval"
+identifies the buffer in which the value for the requested
+option is to be returned and the
+.I "optlen"
+argument is updated to indicate the actual size of the
+.I "optval"
+returned. It is the user's responsibility to allocate
+memory for both
+.I "optval"
+and
+.I "optlen"
+arguments.
+
+At the moment, mOS only provides one
+.I "optname"
+named
+.BR "SO_ERROR"
+that can only be used for
+.BR mtcp_getsockopt()
+function for SOL_SOCKET socket
+.I "level"
+. A successful execution of this function call
+with the specified option name returns the most recently
+recorded socket error for the particular connection (specific
+to the
+.I "sockid"
+socket descriptor).
+
+SOL_MONSOCKET socket
+.I level
+can be used by
+.BR mtcp_getsockopt()
+to retrieve a number of socket options.
+
+.TP 25
+.IP "MOS_FRAGINFO_CLIBUF"
+Gives back offsets to fragments (non-contiguous data segments)
+currently stored in client's TCP ring buffer. The
+.I optval
+is an array of struct tcp_ring_fragment which is defined as:
+
+ struct tcp_ring_fragment {
+       uint64_t offset;
+       uint32_t len;
+ }
+
+where offset flow data starting from client's TCP SYN sequence number,
+and len is the length of the tcp_ring_fragment. The
+.I optval
+holds the size of the array (in terms of the number of elements).
+
+.IP "MOS_FRAGINFO_SVRBUF"
+Gives back offsets to fragments (non-contiguous data segments)
+currently stored in server's TCP ring buffer. The
+.I optval
+is the array of struct tcp_ring_fragment
+
+where offset flow data starting from server's TCP SYN sequence number,
+and len is the length of the tcp_ring_fragment. The
+.I optlen
+holds the size of the array (in terms of the number of elements).
+
+.IP "MOS_INFO_CLIBUF"
+Returns meta-data regarding the client's TCP ring
+buffer. This information is returned in the form of
+.I optval
+which is passed as struct tcp_buf_info.
+
+ struct tcp_buf_info {
+ 	/* The initial TCP sequence number
+         of TCP ring buffer. */
+ 	uint32_t tcpbi_init_seq;
+
+ 	/* TCP sequence number of the 'last
+ 	 byte of payload that has already
+ 	 been read by the end application'
+ 	 (applies in the case of embedded
+ 	 monitor setup) */
+ 	uint32_t tcpbi_last_byte_read;
+
+ 	/* TCP sequence number of the 'last
+ 	 byte of the payload that is 
+ 	 currently buffered and needs to
+ 	 be read by the end application'
+ 	 (applies in the case of embedded
+ 	 monitor setup). In case of standalone
+ 	 monitors, tcpbi_last_byte_read = 
+ 	 tcpbi_next_byte_expected */
+ 	uint32_t tcpbi_next_byte_expected;
+
+ 	/* TCP sequence number of the 'last
+ 	 byte of the payload that is
+ 	 currently stored' in the TCP
+ 	 ring buffer. This value may be
+ 	 greater than tcpbi_next_byte_expected
+ 	 if packets arrive out of order. */
+ 	uint32_t tcpbi_last_byte_received;
+ }
+
+The
+.I optlen
+value contains the sizeof(struct tcp_buf_info). 	
+
+.IP "MOS_INFO_SVRBUF"
+Returns meta-data regarding the server's TCP ring
+buffer. This information is returned in the form of
+.I optval
+which is passed as struct tcp_buf_info. The
+.I optlen
+value contains the sizeof(struct tcp_buf_info).
+
+.IP "MOS_TCP_STATE_CLI"
+Returns the current emulated state of the client. The
+.I optval
+argument is a pointer to an int whereas the
+.I optlen
+argument contains the sizeof(int). The optval returns
+a value of type enum tcpstate which can carry any one of
+the following states.
+
+ enum tcpstate {
+       TCP_CLOSED = 0,
+       TCP_LISTEN,
+       TCP_SYN_SENT,
+       TCP_SYN_RCVD,
+       TCP_ESTABLISHED,
+       TCP_FIN_WAIT_1,
+       TCP_FINE_WAIT_2,
+       TCP_CLOSE_WAIT,
+       TCP_CLOSING,
+       TCP_LAST_ACK,
+       TCP_TIME_WAIT
+ }
+
+.IP "MOS_TCP_STATE_SVR"
+Returns the current emulated state of the server. The
+.I optval
+argument is a pointer to an int whereas the
+.I optlen
+argument contains the sizeof(int). The optval returns
+a value of type enum tcpstate.
+
+.PP
+Both the functions take an additional argument named 
+.I "mctx"
+that represent the per-core mTCP context in an application
+(see
+.BR mtcp_create_context()
+for details).
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns 0 on success; -1 on failure. In case
+of failure,
+.I "errno"
+is set appropriately.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 10
+.B "EACCES"
+.I "mctx"
+is not valid.
+
+.TP 10
+.B "EBADF"
+.I "sockid"
+is not a valid socket descriptor.
+
+.TP 10
+.B "ENOTSOCK"
+The socket referred to by
+.I "sockid"
+is not valid.
+
+.TP 10
+.B "ENOSYS"
+Either the
+.I "level"
+or the
+.I "optname"
+is not implemented.
+
+.TP 10
+.B "EPERM"
+Permission to access a socket option is denied.
+
+.TP 10
+.B 
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_socket (), 
+.BR mtcp_setsockopt ()
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""

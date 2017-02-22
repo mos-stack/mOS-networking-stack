@@ -1,0 +1,111 @@
+.TH mtcp_getlastpkt 3 2017-02-02 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_getlastpkt \- Retrieves the last Ethernet frame of a monitoring flow
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "int mtcp_getlastpkt(mctx_t " mctx ", int " sockid ", int " side ", struct pkt_info *" pinfo );
+
+.SH DESCRIPTION
+.BR mtcp_getlastpkt () 
+fetches a copy of the last Ethernet frame for a given flow observed by the stack.
+The user can select the socket descriptor using
+.I "sockid"
+and the
+.I "side"
+argument (MOS_SIDE_CLI or MOS_SIDE_SVR) to fetch the Ethernet frame
+of her choosing.
+.I "pinfo"
+points to an instance of
+.BR struct 
+pkt_info that should be allocated by the user before calling the function. The
+structure is defined as:
+.PP
+ struct pkt_info {
+ 	// pkt recving time
+ 	uint32_t cur_ts;
+ 	// ETH
+ 	uint16_t eth_len;
+ 	// IP
+ 	uint16_t ip_len;
+ 	//TCP
+ 	uint64_t offset; // TCP recv buffer offset
+ 	uint16_t payloadlen;
+ 	uint32_t seq;
+ 	uint32_t ack_seq;
+ 	uint16_t window;
+
+	struct ethhdr *ethh;
+ 	struct iphdr *iph;
+ 	struct tcphdr *tcph;
+ 	uint8_t *payload;
+ 	
+ }
+.PP
+A successful call to
+.BR mtcp_getlastpkt()
+creates a copy of the last recorded Ethernet frame and appends
+its meta-data (in host byte order). The last four fields of
+.I "pinfo"
+(ethh, iph, tcph and payload) point to the copied frame at
+the appropriate offsets. Please note that the packet buffer
+that contains the copied frame is reused for future invocations
+of
+.BR mtcp_getlastpkt().
+
+An 
+.BR mtcp_getlastpkt ()
+call takes an additional argument named 
+.I "mctx"
+that represents the per-core mTCP context in an application
+(see
+.BR mtcp_create_context()
+for details).
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns 0 on success; -1 on failure. In case
+of failure,
+.I "errno"
+is set appropriately. 
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 15
+.B "EACCES"
+.I "mctx"
+is invalid.
+
+.TP 15
+.B "EPERM"
+Permission denied.
+
+.TP 15
+.B "ENODATA"
+The last captured Ethernet frame for this flow does not
+exist. This can occur if
+.BR "mtcp_getlastpkt()"
+is called during e.g. connection initiation.
+
+.TP 15
+.B "EBADF"
+.I "sockid"
+is not a valid socket descriptor for creating a connection.
+
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_create_context (),
+.BR mtcp_setlastpkt (),
+.BR mtcp_socket (),
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

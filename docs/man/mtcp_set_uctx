@@ -1,0 +1,48 @@
+.TH mtcp_set_uctx 3 2017-02-02 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_set_uctx \- set private per-flow user-context data
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "int mtcp_set_uctx(mctx_t " mctx ", int " sockid ", void *" uctx );
+
+.SH DESCRIPTION
+.BR mtcp_set_uctx () 
+can be used to associate flow-specific monitoring data to
+a flow record in the application layer. The flow-specific
+data is stored with the socket that can referred to by the
+.I "sockid"
+argument.
+The private data can be stored as a void *. It is the
+responsibility of the user to free up the private data (if it
+is dynamically allocated from memory) when the flow
+record gets deleted from the stack (due to, e.g., connection
+termination).
+
+The 
+.BR mtcp_set_uctx ()
+call takes an additional argument named 
+.I "mctx"
+that represents the per-core mTCP context in an application
+(see
+.BR mtcp_create_context()
+for details).
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_socket (),
+.BR mtcp_get_uctx (),
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

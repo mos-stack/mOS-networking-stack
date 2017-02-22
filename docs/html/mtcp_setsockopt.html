@@ -1,0 +1,217 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Thu Feb  2 23:56:35 2017 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>mtcp_setsockopt</title>
+
+</head>
+<body>
+
+<h1 align="center">mtcp_setsockopt</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">mtcp_setsockopt
+&minus; set options on mTCP/mOS sockets</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;mtcp_api.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mtcp_setsockopt(mctx_t</b> <i>mctx</i><b>, int</b>
+<i>sockid</i><b>, int</b> <i>level</i><b>, int</b>
+<i>optname</i><b>, const void *</b><i>optval</i><b>,
+socklen_t</b> <i>optlen</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_setsockopt</b>()
+manipulate options for the socket referred to by the
+<i>sockid</i> descriptor. These options may exist at
+multiple protocol levels. When manipulating socket options,
+the level at which the options resides and the name of the
+option must be specified. A user can use
+<b>SOL_MONSOCKET</b> <i>level</i> to adjust options for
+monitoring sockets.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The arguments
+<i>optval</i> and <i>optlen</i> are used to set options
+values for mtcp_setsockopt().</p>
+
+<p style="margin-left:11%; margin-top: 1em">SOL_MONSOCKET
+socket <i>level</i> can be used by <b>mtcp_setsockopt()</b>
+to set a number of attributes pertaining to the socket.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p style="margin-top: 1em">MOS_CLIBUF</p></td>
+<td width="23%"></td>
+<td width="51%">
+
+
+<p style="margin-top: 1em">Dynamically adjust the size of
+the TCP receive ring buffer of the emulated client stack.
+The <i>optval</i> contains the size of the buffer that needs
+to be set as int, while <i>optlen</i> is equal to
+sizeof(int).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>MOS_SVRBUF</p></td>
+<td width="23%"></td>
+<td width="51%">
+
+
+<p>Dynamically adjust the size of the TCP receive ring
+buffer of the emulated client stack. The <i>optval</i>
+contains the size of the buffer that needs to be set as int,
+while <i>optlen</i> is equal to sizeof(int).</p></td></tr>
+</table>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Returns 0 on
+success; -1 on failure. In case of failure, <i>errno</i> is
+set appropriately.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p style="margin-top: 1em"><b>EACCES</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p style="margin-top: 1em"><i>mctx</i> is not valid.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><b>EBADF</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p><i>sockid</i> is not a valid socket descriptor.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><b>ENOTSOCK</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>The socket referred to by <i>sockid</i> is not
+valid.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><b>ENOSYS</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>Either the <i>level</i> or the <i>optname</i> is not
+implemented.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>Permission to access a socket option is denied.</p></td></tr>
+</table>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:22%; margin-top: 1em">mOS development
+team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_socket</b>(),
+<b>mtcp_getsockopt</b>()</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of mOS release 0.3 <i>docs</i> section. A description
+of the project, and information about reporting bugs, can be
+found at http://mos.kaist.edu/.</p>
+<hr>
+</body>
+</html>

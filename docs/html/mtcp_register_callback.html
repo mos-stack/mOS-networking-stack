@@ -1,0 +1,221 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of mtcp_register_callback</TITLE>
+<link rel="stylesheet" href="./common.css">
+</HEAD><BODY>
+<div class="main">
+<H1 align="center">mtcp_register_callback</H1>
+
+<H2>NAME</H2>
+
+<p style="margin-left:11%; margin-top: 1em">mtcp_register_callback - register/de-register a callback function on a specified hook point</p>
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<p style="margin-left:11%; margin-top: 1em">
+<B>#include &lt;<A HREF="file:///usr/include/mos_api.h">mos_api.h</A>&gt;</B></P>
+
+<p style="margin-left:11%; margin-top: 1em"><B>int mtcp_register_callback(mctx_t </B><I>mctx</I><B>, int </B><I>sockid</I><B>, event_t </B><I>event</I><B>, int </B><I>hook_point</I><B>, callback_t </B><I>cb</I><B>);</B> </P>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+<p style="margin-left:11%; margin-top: 1em">
+<B>mtcp_register_callback</B>()
+
+registers a callback handler,
+<I>cb,</I>
+
+for a monitoring socket referred to by the
+<I>sockid</I>
+
+descriptor. A user can register the callback handler
+in any one of the three available hook points as shown
+below:
+<p style="margin-left:11%; margin-top: 1em">
+
+<p style="margin-left:11%; margin-top: 1em">
+<TABLE BORDER>
+<TR VALIGN=top><TD ALIGN=center COLSPAN=2>Hook points<BR></TD></TR>
+<TR VALIGN=top><TD>Type</TD><TD>Description<BR></TD></TR>
+<TR VALIGN=top><TD>MOS_HK_RCV</TD><TD>
+Trigger point right after receiver side stack update.
+<BR></TD></TR>
+<TR VALIGN=top><TD>MOS_HK_SND</TD><TD>
+Trigger point right after sender side stack update
+<BR></TD></TR>
+<TR VALIGN=top><TD>MOS_NULL</TD><TD>
+Trigger point for connection-less IP traffic
+<BR></TD></TR>
+</TABLE>
+
+<p style="margin-left:11%; margin-top: 1em">
+
+<p style="margin-left:11%; margin-top: 1em">
+A user can register for relevant built-in or custom user-defined
+events (see
+<B>mtcp_define_event())</B>
+
+of interest. The
+<I>event</I>
+
+argument is a typedef'ed uint64_t integer. mOS provides the following
+built-in events that a user can employ:
+<p style="margin-left:11%; margin-top: 1em">
+<TABLE BORDER>
+<TR VALIGN=top><TD ALIGN=center COLSPAN=2>Events<BR></TD></TR>
+<TR VALIGN=top><TD>Type</TD><TD>Description<BR></TD></TR>
+<TR VALIGN=top><TD>MOS_ON_PKT_IN</TD><TD>
+Packet arrival.
+<BR></TD></TR>
+<TR VALIGN=top><TD>MOS_ON_CONN_START</TD><TD>
+Connection initiation (the first SYN packet).
+<BR></TD></TR>
+<TR VALIGN=top><TD>MOS_ON_REXMIT</TD><TD>
+TCP packet retransmission.
+<BR></TD></TR>
+<TR VALIGN=top><TD>MOS_ON_TCP_STATE_CHANGE</TD><TD>
+TCP state transition.
+<BR></TD></TR>
+<TR VALIGN=top><TD>MOS_ON_CONN_END</TD><TD>
+Connection termination.
+<BR></TD></TR>
+<TR VALIGN=top><TD>MOS_ON_CONN_NEW_DATA</TD><TD>
+New flow data.
+<BR></TD></TR>
+<TR VALIGN=top><TD>MOS_ON_ORPHAN</TD><TD>
+Out-of-flow (or non-TCP) packet arrival.
+<BR></TD></TR>
+<TR VALIGN=top><TD>MOS_ON_ERROR</TD><TD>
+Error report (e.g. receive buffer full (see
+<B>mtcp_peek())).</B>
+
+<BR></TD></TR>
+</TABLE>
+
+<p style="margin-left:11%; margin-top: 1em">
+
+<p style="margin-left:11%; margin-top: 1em">
+All events, with the exception of MOS_ON_ORPHAN, can be used for stream monitoring sockets.
+The mOS stack internally manages the client and the server networking stacks
+as the ongoing traffic passes through the middlebox. A user-registered callback,
+<I>cb,</I>
+
+is invoked whenever a relevant network event is detected by the underlying stack. The
+user is expected to define the callback handler and is expected to add monitoring
+application logic pertaining to the triggered event. The
+callback handler is a function pointer of type:
+<p style="margin-left:11%; margin-top: 1em">
+<B>typedef void (*callback_t)(mctx_t </B><I>mctx</I><B>, int </B><I>sock</I><B>, int </B><I>side</I><B>, event_t </B><I>event</I><B>);</B>
+
+<p style="margin-left:11%; margin-top: 1em">
+The
+<I>side</I>
+
+variable informs the user exactly
+which flow of the connection is currently in context. This can
+either be MOS_SIDE_CLI (the client side) or MOS_SIDE_SVR (the
+server side). Callback functions generated from raw monitoring
+sockets (MOS_SOCK_MONITOR_RAW) only provide MOS_NULL as the
+value of the side argument, while the only available event
+for such sockets is MOS_ON_ORPHAN.
+<p style="margin-left:11%; margin-top: 1em">
+<p style="margin-left:11%; margin-top: 1em">
+
+A user can dynamically de-register the event callback handler
+from any monitoring socket, during the life time of the connection,
+by calling
+<B>mtcp_register_callback()</B>
+
+with the
+<I>cb</I>
+
+argument set as NULL.
+<p style="margin-left:11%; margin-top: 1em">
+A typical usage of
+<B>mtcp_register_callback()</B>
+
+is illustrated below:
+<p style="margin-left:11%; margin-top: 1em">
+
+<p style="margin-left:11%; margin-top: 1em">
+<BR>&nbsp;/*************************************************/
+<BR>&nbsp;monitor_filter_t&nbsp;ft&nbsp;=&nbsp;{0};
+<BR>&nbsp;int&nbsp;s;
+<p style="margin-left:11%; margin-top: 1em">
+<BR>&nbsp;//&nbsp;create&nbsp;a&nbsp;passive&nbsp;monitoring&nbsp;socket&nbsp;with&nbsp;its&nbsp;scope
+<BR>&nbsp;s&nbsp;=&nbsp;mtcp_socket(m,&nbsp;AF_INET,&nbsp;MOS_SOCK_MONITOR_STREAM,&nbsp;0);
+<BR>&nbsp;ft.stream_syn_filter&nbsp;=&nbsp;&quot;dst&nbsp;net&nbsp;216.58&nbsp;and&nbsp;dst&nbsp;port&nbsp;80&quot;;
+<BR>&nbsp;mtcp_bind_monitor_filter(m,&nbsp;s,&nbsp;&amp;ft);
+<p style="margin-left:11%; margin-top: 1em">
+<BR>&nbsp;//&nbsp;sets&nbsp;up&nbsp;an&nbsp;event&nbsp;handler&nbsp;for&nbsp;MOS_ON_REXMIT
+<BR>&nbsp;mtcp_register_callback(m,&nbsp;s,&nbsp;MOS_ON_REXMIT,&nbsp;MOS_HK_RCV,&nbsp;OnRexmitPkt);
+<BR>&nbsp;/*************************************************/
+<p style="margin-left:11%; margin-top: 1em">
+
+<A NAME="lbAE">&nbsp;</A>
+<H2>RETURN VALUE</H2>
+
+<p style="margin-left:11%; margin-top: 1em">
+Returns 0 on success; -1 on failure.
+
+
+
+
+<A NAME="lbAF">&nbsp;</A>
+<H2>ERRORS</H2>
+<p style="margin-left:11%; margin-top: 1em">
+<DL>
+<DT><B>EINVAL &nbsp; &nbsp; </B>
+
+<DD>
+The socket descriptor,
+<I>sockid</I>
+
+is invalid.
+
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>AUTHORS</H2>
+<p style="margin-left:11%; margin-top: 1em">
+mOS development team &lt;<A HREF="mailto:mtcp-user@list.ndsl.kaist.edu">mtcp-user@list.ndsl.kaist.edu</A>&gt;
+
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2>
+<p style="margin-left:11%; margin-top: 1em">
+<B>mtcp_socket</B>(),
+
+<B>mtcp_bind_monitor_filter</B>(),
+
+<B>mtcp_register_callback</B>()
+
+
+<A NAME="lbAI">&nbsp;</A>
+<H2>COLOPHON</H2>
+<p style="margin-left:11%; margin-top: 1em">
+This page is part of mOS release 0.3
+<I>docs</I>
+
+section. A description of the project, and information
+about reporting bugs, can be found at
+<A HREF="http://mos.kaist.edu/.">http://mos.kaist.edu/.</A>
+
+<!--
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">RETURN VALUE</A><DD>
+<DT><A HREF="#lbAF">ERRORS</A><DD>
+<DT><A HREF="#lbAG">AUTHORS</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+<DT><A HREF="#lbAI">COLOPHON</A><DD>
+</DL>
+<!-- <HR> -->
+<div class="footer">
+  <img src="back-arrow.jpg" width="2%" height="2%"><a href="http://mos.kaist.edu/index_man.html">Back to Index</a>
+</div>
+</div>
+</BODY>
+</HTML>

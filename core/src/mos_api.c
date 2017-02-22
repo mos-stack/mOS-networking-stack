@@ -512,6 +512,50 @@ mtcp_getlastpkt(mctx_t mctx, int sock, int side, struct pkt_ctx **pctx)
 }
 #endif
 /*----------------------------------------------------------------------------*/
+int
+mtcp_sendpkt(mctx_t mctx, int sock, const struct pkt_info *pkt)
+{
+	mtcp_manager_t mtcp;
+	socket_map_t socket;
+
+	mtcp = GetMTCPManager(mctx);
+	if (!mtcp || !pkt) {
+		errno = EACCES;
+		return -1;
+	}
+
+	/* check if the calling thread is in MOS context */
+	if (mtcp->ctx->thread != pthread_self()) {
+		errno = EPERM;
+		return -1;
+	}
+
+	/* check if the socket is monitor stream */
+	socket = &mtcp->msmap[sock];
+
+	if (!(pkt->iph) || !(pkt->tcph)) {
+		errno = ENODATA;
+		TRACE_INFO("mtcp_sendpkt() only supports TCP packet for now.\n");
+		return -1;
+	}
+
+	if (socket->socktype == MOS_SOCK_MONITOR_STREAM_ACTIVE) {
+		SendTCPPacketStandalone(mtcp,
+				   pkt->iph->saddr, pkt->tcph->source,
+				   pkt->iph->daddr, pkt->tcph->dest,
+				   htonl(pkt->tcph->seq), htonl(pkt->tcph->ack_seq),
+				   ntohs(pkt->tcph->window), TCP_FLAG_ACK,
+				   pkt->payload, pkt->payloadlen,
+				   socket->monitor_stream->stream->rcvvar->ts_recent,
+				   socket->monitor_stream->stream->rcvvar->ts_lastack_rcvd,
+				   pkt->iph->id);
+
+
+	}
+
+	return 0;
+}
+/*----------------------------------------------------------------------------*/
 /** Disable events from the monitor stream socket
  * @param [in] mtcp: mtcp_manager
  * @param [in] sock: socket
@@ -696,7 +740,7 @@ SendRSTPacketStandalone(mtcp_manager_t mtcp, struct tcp_stream *stream) {
 	SendTCPPacketStandalone(mtcp,
 				stream->saddr, stream->sport, stream->daddr, stream->dport,
 				stream->snd_nxt, stream->rcv_nxt, 0, TCP_FLAG_RST | TCP_FLAG_ACK,
-				NULL, 0, mtcp->cur_ts, 0);
+				NULL, 0, mtcp->cur_ts, 0, 0);
 }
 /*----------------------------------------------------------------------------*/
 /**

@@ -1,0 +1,447 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Thu Feb  2 17:04:41 2017 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>mtcp_init</title>
+
+</head>
+<body>
+
+<h1 align="center">mtcp_init</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mtcp_init
+&minus; initialize the mOS stack</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;mtcp_api.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mtcp_init(char *</b><i>config_file</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_init</b>()
+call is used to set the stack parameters of an mOS-based
+application. These parameters are loaded inside the process
+via a startup configuration file, <i>config_file.</i> A
+developer is required to first call <b>mtcp_init</b>()
+function before he/she can invoke any follow-up mOS
+functions in his/her application.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A typical
+<i>config_file</i> is composed of at least two mOS
+configuration blocks. The app block sets the configuration
+parameters of the application that employs the underlying
+mOS stack. A typical instance of an app block is illustrated
+below.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">#######################
+<br>
+# APPLICATION OPTIONS # <br>
+####################### <br>
+# application to run <br>
+application { <br>
+type = end <br>
+run = epwget <br>
+core_mask = 0x000F <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">A user can
+populate the app block with the following parameters:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p style="margin-top: 1em">type</p></td>
+<td width="12%"></td>
+<td width="63%">
+
+
+<p style="margin-top: 1em">The type of application that the
+user wants to run. An application can either be an endpoint
+application (&rsquo;end&rsquo;) such as an mTCP client or
+mTCP server, or be a middlebox application
+(&rsquo;monitor&rsquo;).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p>run</p></td>
+<td width="12%"></td>
+<td width="63%">
+
+
+<p>The name of the binary to execute.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p>core_mask</p></td>
+<td width="12%"></td>
+<td width="63%">
+
+
+<p>The CPU bitmask where you want to run the application.
+The mask 0x000F denotes that the user wants to run a
+single-process, 4-threaded application on the first four
+cores of the CPU (CPU 0~3).</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The user can
+run one or more monitoring applications at the same
+time.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A mos block
+adjusts the internal parameters of the mOS stack.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">#######################
+<br>
+# MOS-RELATED OPTIONS # <br>
+#######################</p>
+
+<p style="margin-left:11%; margin-top: 1em">mos { <br>
+forward = 1</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">#######################
+<br>
+##### I/O OPTIONS ##### <br>
+####################### <br>
+# number of memory channels per socket [mandatory for DPDK]
+<br>
+nb_mem_channels = 4</p>
+
+<p style="margin-left:11%; margin-top: 1em"># devices used
+for MOS applications [mandatory] <br>
+netdev { <br>
+dpdk0 0x000F <br>
+dpdk1 0x000F <br>
+}</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">#######################
+<br>
+### LOGGING OPTIONS ### <br>
+####################### <br>
+# NICs to print network statistics per second <br>
+# if enabled, mTCP will print xx Gbps and xx pps for RX and
+TX <br>
+stat_print = dpdk0 dpdk1</p>
+
+<p style="margin-left:11%; margin-top: 1em"># A directory
+contains MOS system log files <br>
+mos_log = logs/</p>
+
+<p style="margin-left:11%; margin-top: 1em"># dpdk0 and
+dpdk1 will forward traffic in either direction <br>
+nic_forward_table { <br>
+dpdk0 dpdk1 <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">}</p>
+
+<p style="margin-left:11%; margin-top: 1em">A user can
+populate an mOS configuration block with the following
+parameters:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p style="margin-top: 1em">forward</p></td>
+<td width="9%"></td>
+<td width="52%">
+
+
+<p style="margin-top: 1em">Setting this option to 1 enables
+packet forwarding (for middlebox operations). Keep this
+value to 0 for endpoint mTCP applications.</p></td>
+<td width="2%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p>nb_mem_channels</p></td>
+<td width="9%"></td>
+<td width="52%">
+
+
+<p>(Mandatory for DPDK) nb_mem_channels parameter specifies
+the number of memory channels per CPU socket. Please refer
+to DPDK user guide, on tuning this parameter for performance
+optimizations.</p> </td>
+<td width="2%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p>netdev</p></td>
+<td width="9%"></td>
+<td width="52%">
+
+
+<p>netdev parameter block specifies the network interfaces
+(or device ports) used for mOS applications. Each line
+contains the mapping of a network interface and CPU core
+mask. In the example above, it uses two DPDK-assisted
+network interfaces (dpdk0 and dpdk1), and CPU cores 0~3
+receive/transmit traffic from/to the first 4 (0~3) hardware
+queues of the NIC. We program our DPDK driver to use
+symmetric RSS algorithm to distribute traffic across the
+cores. This ensures that the same CPU gets to examine
+packets of both flows of the connection.</p></td>
+<td width="2%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p>stat_print</p></td>
+<td width="9%"></td>
+<td width="52%">
+
+
+<p>stat_print parameter specifies the network interfaces
+which the application is interested in displaying runtime
+monitor statistics.</p></td>
+<td width="2%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p>mos_log</p></td>
+<td width="9%"></td>
+<td width="52%">
+
+
+<p>mos_log parameter specifies the path to a directory
+where the mOS system writes extra logging data.</p></td>
+<td width="2%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p>nic_forward_table</p></td>
+<td width="9%"></td>
+<td width="52%">
+
+
+<p>nic_forward_table parameter block specifies the static
+Ethernet traffic forwarding rules when the mOS middlebox
+application is set in inline mode (Running Monitor
+Applications in Inline Mode). If enabled, each line accepts
+a pair of DPDK-registered NIC interfaces via which the
+traffic can later be forwarded in either direction. Each
+interface should have one-to-one mapping with another. In
+the example above, traffic is switched from dpdk0 to dpdk1
+and vice versa. The middlebox is configured as a
+&rsquo;bump-in-the-wire&rsquo;.</p> </td>
+<td width="2%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p>max_concurrency</p></td>
+<td width="9%"></td>
+<td width="52%">
+
+
+<p>max_concurrency specifies the maximum number of
+concurrent flows a middlebox can examine per CPU core. This
+parameter is used for preallocating the memory for flows.
+[default value: 100000]</p></td>
+<td width="2%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p>no_ring_buffers</p></td>
+<td width="9%"></td>
+<td width="52%">
+
+
+<p>no_ring_buffers determines whether the TCP ring buffer
+should be disabled. For mOS endpoint (mTCP) applications,
+mOS always require the socket buffers for the application.
+For middlebox applications, you can disable the receive-side
+socket buffer by putting no_ring_buffers = 1. [default
+value: 0 (ring buffer is enabled by default)]</p></td>
+<td width="2%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p>rmem_size</p></td>
+<td width="9%"></td>
+<td width="52%">
+
+
+<p>Specifies the size of receive buffer per socket in bytes
+[default value: 8192 B].</p></td>
+<td width="2%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p>wmem_size</p></td>
+<td width="9%"></td>
+<td width="52%">
+
+
+<p>Specifies the size of send buffer per socket in bytes
+[default value: 8192 B].</p></td>
+<td width="2%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p>tcp_tw_interval</p></td>
+<td width="9%"></td>
+<td width="52%">
+
+
+<p>Specifies the TCP timewait interval value in seconds.
+TCP timewait interval is the allowed time for a connection
+to be in the TIME_WAIT state. For mOS endpoint (mTCP)
+applications, user can set it as an arbitrary value larger
+than 0 to guarantee graceful shutdown. For monitoring
+applications, the user may set it to 0 if she is not
+interested in monitoring the flow after TIME_WAIT state.
+[default value: 0s]</p></td>
+<td width="2%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+
+<p>tcp_timeout</p></td>
+<td width="9%"></td>
+<td width="52%">
+
+
+<p>Specifies the TCP timeout value in seconds. This
+parameter determines the maximum allowed time for any flows
+to exist without any packet reception. In other words, mOS
+middlebox stops monitoring the connection after tcp_timeout
+idle period. You can set tcp_timeout = -1 to disable the
+timeout checking. For mOS endpoint (mTCP) applications,
+tcp_timeout serves as a timeout period for connections that
+are in active open states (SYN_SENT states). [default value:
+30s]</p> </td>
+<td width="2%">
+</td></tr>
+</table>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Returns 0 on
+success; -1 on failure.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">See
+<i>http://mos.kaist.edu/guide/walkthrough/05_configuration.html</i>
+to view example startup mOS configuration file.</p>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mOS development
+team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_destroy</b>()</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of mOS release 0.3 <i>docs</i> section. A description
+of the project, and information about reporting bugs, can be
+found at http://mos.kaist.edu/.</p>
+<hr>
+</body>
+</html>

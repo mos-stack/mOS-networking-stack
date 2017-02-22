@@ -1,0 +1,106 @@
+.TH mtcp_setsockopt 3 2017-02-02 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_setsockopt \- set options on mTCP/mOS sockets
+.SH SYNOPSIS
+.B #include <mtcp_api.h>
+.sp
+
+.BI "int mtcp_setsockopt(mctx_t " mctx ", int " sockid ", int " level ", int " optname ", const void *" optval ", socklen_t " optlen );
+
+.SH DESCRIPTION
+.BR mtcp_setsockopt ()
+manipulate options for the socket referred to by the
+.I "sockid"
+descriptor. These options may exist at multiple protocol
+levels. When manipulating socket options, the level at
+which the options resides and the name of the option
+must be specified. A user can use
+.BR "SOL_MONSOCKET"
+.I "level"
+to adjust options for monitoring sockets.
+
+The arguments
+.I "optval"
+and
+.I "optlen"
+are used to set options values for mtcp_setsockopt().
+
+SOL_MONSOCKET socket
+.I level
+can be used by
+.BR mtcp_setsockopt()
+to set a number of attributes pertaining to the socket.
+
+.TP 25
+.IP "MOS_CLIBUF"
+Dynamically adjust the size of the TCP receive ring buffer
+of the emulated client stack. The
+.I optval
+contains the size of the buffer that needs to be set as int, while
+.I optlen
+is equal to sizeof(int).
+
+.IP "MOS_SVRBUF"
+Dynamically adjust the size of the TCP receive ring buffer
+of the emulated client stack. The
+.I optval
+contains the size of the buffer that needs to be set as int, while
+.I optlen
+is equal to sizeof(int).
+
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns 0 on success; -1 on failure. In case
+of failure,
+.I "errno"
+is set appropriately.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 10
+.B "EACCES"
+.I "mctx"
+is not valid.
+
+.TP 10
+.B "EBADF"
+.I "sockid"
+is not a valid socket descriptor.
+
+.TP 10
+.B "ENOTSOCK"
+The socket referred to by
+.I "sockid"
+is not valid.
+
+.TP 10
+.B "ENOSYS"
+Either the
+.I "level"
+or the
+.I "optname"
+is not implemented.
+
+.TP 10
+.B "EPERM"
+Permission to access a socket option is denied.
+
+.TP 10
+.B 
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_socket (), 
+.BR mtcp_getsockopt ()
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""

@@ -1,0 +1,76 @@
+.TH mtcp_getconf 3 2017-02-02 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_getconf \- retrieve the running configuration of mOS application
+.SH SYNOPSIS
+.B #include <mtcp_api.h>
+.sp
+.BI "int mtcp_getconf(struct mtcp_conf *" "conf" );
+
+.SH DESCRIPTION
+.BR mtcp_getconf () 
+call is used to fetch the current running configuration of the
+mOS core. The
+.I "conf"
+argument is a pointer to a user-allocated
+.I "struct mtcp_conf"
+that contains a number of fields including:
+
+.TP 20
+.I "num_cores"
+An integer that shows the total number of cores the mOS core
+is using.
+
+.TP 20
+.I "max_concurrency"
+An integer that holds how many ongoing flows each core thread
+manages concurrently. Default value is 100000.
+
+.TP 20
+.I "max_num_buffers"
+An integer that holds the maximum number of socket buffers
+each core thread can hold. Default value is 100000.
+
+.TP 20
+.I "rcvbuf_size"
+An integer that holds the size of the TCP receive buffer.
+Default value is 8KB. 
+
+.TP 20
+.I "tcp_timeout"
+An integer that holds the idle flow expiry timeout of
+the monitoring flow. Default value is 30 secs. 
+
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns 0 on success; -1 on failure and
+.I "errno"
+is set appropriately.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""".
+.SH ERRORS
+.TP 10
+.B "EINVAL"
+The
+.I "conf"
+argument is NULL.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""".
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH NOTES
+See 
+.I "http://mos.kaist.edu/guide/walkthrough/05_configuration.html"
+to view example startup mOS configuration file.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_setconf ()
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

@@ -1,0 +1,156 @@
+.TH mtcp_register_callback 3 2017-02-02 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_register_callback \- register/de-register a callback function on a specified hook point
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "int mtcp_register_callback(mctx_t " mctx ", int " sockid ", event_t " event ", int " hook_point ", callback_t " cb );
+
+.SH DESCRIPTION
+.BR mtcp_register_callback () 
+registers a callback handler,
+.I "cb",
+for a monitoring socket referred to by the
+.I "sockid"
+descriptor. A user can register the callback handler
+in any one of the three available hook points as shown
+below:
+.PP
+
+.TS
+tab(:) allbox;
+c s
+l l.
+Hook points
+Type:Description
+MOS_HK_RCV:T{
+Trigger point right after receiver side stack update.
+T}
+MOS_HK_SND:T{
+Trigger point right after sender side stack update
+T}
+MOS_NULL:T{
+Trigger point for connection-less IP traffic
+T}
+.TE
+.PP
+
+A user can register for relevant built-in or custom user-defined
+events (see
+.BR mtcp_define_event())
+of interest. The
+.I "event"
+argument is a typedef'ed uint64_t integer. mOS provides the following
+built-in events that a user can employ:
+
+.TS
+tab(:) allbox;
+c s
+l l.
+Events
+Type:Description
+MOS_ON_PKT_IN:T{
+Packet arrival.
+T}
+MOS_ON_CONN_START:T{
+Connection initiation (the first SYN packet).
+T}
+MOS_ON_REXMIT:T{
+TCP packet retransmission.
+T}
+MOS_ON_TCP_STATE_CHANGE:T{
+TCP state transition.
+T}
+MOS_ON_CONN_END:T{
+Connection termination.
+T}
+MOS_ON_CONN_NEW_DATA:T{
+New flow data.
+T}
+MOS_ON_ORPHAN:T{
+Out-of-flow (or non-TCP) packet arrival.
+T}
+MOS_ON_ERROR:T{
+Error report (e.g. receive buffer full (see
+.BR mtcp_peek())).
+T}
+.TE
+.PP
+
+All events, with the exception of MOS_ON_ORPHAN, can be used for stream monitoring sockets.
+The mOS stack internally manages the client and the server networking stacks
+as the ongoing traffic passes through the middlebox. A user-registered callback,
+.I "cb",
+is invoked whenever a relevant network event is detected by the underlying stack. The
+user is expected to define the callback handler and is expected to add monitoring
+application logic pertaining to the triggered event. The
+callback handler is a function pointer of type:
+
+.BI "typedef void (*callback_t)(mctx_t " mctx ", int " sock ", int " side ", event_t " event );
+
+The
+.I "side"
+variable informs the user exactly
+which flow of the connection is currently in context. This can
+either be MOS_SIDE_CLI (the client side) or MOS_SIDE_SVR (the
+server side). Callback functions generated from raw monitoring
+sockets (MOS_SOCK_MONITOR_RAW) only provide MOS_NULL as the
+value of the side argument, while the only available event
+for such sockets is MOS_ON_ORPHAN.
+
+.PP
+A user can dynamically de-register the event callback handler
+from any monitoring socket, during the life time of the connection,
+by calling
+.BR mtcp_register_callback()
+with the
+.I "cb"
+argument set as NULL.
+
+A typical usage of
+.BR mtcp_register_callback()
+is illustrated below:
+.PP
+
+ /*************************************************/
+ monitor_filter_t ft = {0};
+ int s;
+
+ // create a passive monitoring socket with its scope
+ s = mtcp_socket(m, AF_INET, MOS_SOCK_MONITOR_STREAM, 0);
+ ft.stream_syn_filter = "dst net 216.58 and dst port 80";
+ mtcp_bind_monitor_filter(m, s, &ft);
+
+ // sets up an event handler for MOS_ON_REXMIT
+ mtcp_register_callback(m, s, MOS_ON_REXMIT, MOS_HK_RCV, OnRexmitPkt);
+ /*************************************************/
+
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns 0 on success; -1 on failure.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 15
+.B "EINVAL"
+The socket descriptor,
+.I "sockid"
+is invalid.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_socket (),
+.BR mtcp_bind_monitor_filter (),
+.BR mtcp_register_callback ()
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

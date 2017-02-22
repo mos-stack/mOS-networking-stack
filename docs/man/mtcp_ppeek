@@ -1,0 +1,131 @@
+.TH mtcp_ppeek 3 2017-02-02 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_ppeek \- Peek into the bytestream from a monitoring socket from a given offset
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "ssize_t mtcp_ppeek(mctx_t " mctx ", int " sockid ", int " side ", char *" buf ", size_t " len ", uint64_t " off );
+
+.SH DESCRIPTION
+
+.BR mtcp_ppeek () 
+can be used to peek up to
+.I "len"
+number of bytes from a monitoring socket via socket descriptor
+.I "sockid"
+into the buffer starting at
+.I "buf." from
+.I "off";
+value which is the offset distance (in bytes) from the TCP
+initial sequence number. It is the responsibility of the user to allocate memory for
+.I "buf"
+array.
+
+For cases when the total number of buffered unread bytes
+in the socket are less than
+.I "len,"
+.BR "mtcp_ppeek()"
+copies entire data to
+.I "buf"
+and returns the actual number of bytes that can be used
+by the application.
+
+Note that the
+.I "off"
+can also point to the data in the fragmented buffer list of
+the TCP ring buffer (see
+.BR mtcp_getsockopt()).
+If there is no received byte at
+.I "off"
+in the TCP ring buffer, it returns error. If there are
+received bytes starting from
+.I "off",
+len is set to be the number of bytes read from the buffer.
+After
+.BR mtcp_ppeek(),
+the data in the TCP ring buffer will
+not be flushed, and the monitor offset used by
+.BR mtcp_peek()
+is not changed.
+
+An 
+.BR mtcp_ppeek ()
+call takes two additional argument named 
+.I "mctx", 
+that represents the per-core mTCP context in an application
+(see
+.BR mtcp_create_context()
+for details); and
+.I "side"
+that informs the stack whether it needs to peek the client
+(MOS_SIDE_CLI) or server (MOS_SIDE_SVR) side.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+On success, the number of bytes read is returned. It is not
+an error if this number is smaller than the number of bytes
+requested; this may happen when the socket has fewer number of
+bytes buffered at that moment. On all errors, -1 is returned and
+.I "errno"
+is set appropriately.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 18
+.B "EACCES"
+The
+.I "mctx"
+argument is invalid.
+
+.TP 18
+.B "EBADF"
+The socket descriptor
+.I "sockid"
+is invalid.
+
+.TP 18
+.B "EINVAL"
+The buffer management of the monitoring socket with
+.I "sockid"
+was already disabled.
+
+.TP 18
+.B "ESOCKTNOSUPPORT"
+The socket referred to by
+.I "sockid"
+has invalid
+.I "type"
+
+.TP 18
+.B "ENOTCONN"
+Th socket referred to by
+.I "sockid"
+is in a TCP state that disallows read operations.
+
+.TP 18
+.B "ENODATA"
+The socket referred to by
+.I "sockid"
+does not have any available bytes in its buffer
+for reading.
+
+.TP 18
+.B "EPERM"
+The caller is not permitted
+to access this function.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_peek (),
+.BR mtcp_socket (),
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

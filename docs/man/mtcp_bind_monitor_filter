@@ -1,0 +1,94 @@
+.TH mtcp_bind_monitor_filter 3 2017-02-01 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_bind_monitor_filter \- Bind a monitoring socket to a connection filter
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "int mtcp_bind_monitor_filter(mctx_t " mctx ", int " sockid ", monitor_filter_t " buf ");
+
+.SH DESCRIPTION
+.BR mtcp_bind_monitor_filter () 
+can be used bind an mTCP socket via socket descriptor
+.I "sockid"
+to filter only that traffic that the user is interested
+to examine. The monitoring filter is expressed as a
+union defined below:
+
+	union monitor_filter {
+ 	      char *raw_pkt_filter; // for MOS_SOCK_MONITOR_RAW sockets
+
+ 	      struct { // for MOS_SOCK_MONITOR_STREAM sockets
+ 	          char *stream_syn_filter;
+ 		     char *stream_orphan_filter;
+ 	      };
+ 	}
+
+The user can apply BPF filters specific to the
+socket type.
+.I "raw_pkt_filter"
+can be applied for MOS_SOCK_MONITOR_RAW sockets (general IP traffic).
+.I "stream_syn_filter"
+can be used for those connections that observe a complete
+3-way connection handshake.
+.I "stream_orphan_filter"
+is used for TCP traffic that have no connection initiation
+records inside mOS.
+
+An 
+.BR mtcp_bind_monitor_filter ()
+call takes an additional argument named 
+.I "mctx"
+that represents the per-core mTCP context in an application
+(see
+.BR mtcp_create_context()
+for details).
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns 0 on success; -1 on failure and
+.I "errno"
+is set appropriately. It is not an error if the filter passed
+is NULL. 
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 15
+.B "EACCES"
+.I "mctx"
+is invalid.
+
+.TP 15
+.B "EBADF"
+The socket descriptor
+.I "sockid"
+is invalid.
+
+.TP 15
+.B "EINVAL"
+The filter expression
+.I "ft"
+is not valid.
+
+.TP 15
+.B "ENOPROTOOPT"
+The socket referred to by
+.I "sockid"
+has invalid
+.I "type"
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_socket (),
+.BR mtcp_register_callback (),
+.BR mtcp_bind (),
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

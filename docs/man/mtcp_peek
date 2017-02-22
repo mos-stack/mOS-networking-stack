@@ -1,0 +1,130 @@
+.TH mtcp_peek 3 2017-02-02 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_peek \- Peek into the bytestream from a monitoring socket
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "ssize_t mtcp_peek(mctx_t " mctx ", int " sockid ", int " side ", char *" buf ", size_t " len );
+
+.SH DESCRIPTION
+.BR mtcp_peek () 
+can be used to peek up to
+.I "len"
+number of bytes from a monitoring socket via socket descriptor
+.I "sockid"
+into the buffer (unfragmented) starting at
+.I "buf." 
+It is the responsibility of the user to allocate memory for
+.I "buf"
+array.
+
+For cases when the total number of buffered unread bytes
+in the socket are less than
+.I "len,"
+.BR "mtcp_peek()"
+copies entire data to
+.I "buf"
+and returns the actual number of bytes that can be used
+by the application.
+
+An 
+.BR mtcp_peek ()
+call takes two additional argument named 
+.I "mctx", 
+that represents the per-core mTCP context in an application
+(see
+.BR mtcp_create_context()
+for details); and
+.I "side"
+that informs the stack whether it needs to peek the client
+(MOS_SIDE_CLI) or server (MOS_SIDE_SVR) side.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+On success, the number of bytes read is returned. It is not
+an error if this number is smaller than the number of bytes
+requested; this may happen when the socket has fewer number of
+bytes buffered at that moment. On all errors, -1 is returned and
+.I "errno"
+is set appropriately.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 10
+.B "EACCES"
+The
+.I "mctx"
+argument is invalid.
+
+.TP 10
+.B "EBADF"
+The socket descriptor
+.I "sockid"
+is invalid.
+
+.TP 10
+.B "EINVAL"
+The buffer management of the monitoring socket with
+.I "sockid"
+was already disabled.
+
+.TP 10
+.B "ENOTSOCK"
+The socket referred to by
+.I "sockid"
+has invalid
+.I "type"
+
+.TP 10
+.B "ENOTCONN"
+Th socket referred to by
+.I "sockid"
+is in a TCP state that disallows read operations.
+
+.TP 10
+.B "ENODATA"
+The socket referred to by
+.I "sockid"
+does not have any available bytes in its buffer
+for reading.
+
+.TP 10
+.B "EPERM"
+The caller is not permitted
+to access this function.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH NOTES
+Since TCP flow control applies between end-hosts, the
+receive buffer managed by mOS can become full while new
+packets continue to arrive. Silent TCP ring buffer overwriting
+is undesirable since the application may not notice the
+buffer overflow. Instead, mOS raises an error event to
+explicitly notify the application about the buffer
+overflow. The application can either drain the buffer
+by reading the data (by calling
+.BR mtcp_peek())
+or enlarge the buffer (by calling
+.BR mtcp_setsockopt()).
+Otherwise, the stack overwrites the buffer with the new data,
+and adjusts the internal peek pointer. To notify the
+application about the overwriting,
+.BR mtcp_peek()
+fails right after overwriting. Subsequent function calls
+continue to read the data from the new position. 
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_ppeek (),
+.BR mtcp_socket (),
+.BR mtcp_getsockopt ()
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
