@@ -548,7 +548,7 @@ mtcp_sendpkt(mctx_t mctx, int sock, const struct pkt_info *pkt)
 				   pkt->payload, pkt->payloadlen,
 				   socket->monitor_stream->stream->rcvvar->ts_recent,
 				   socket->monitor_stream->stream->rcvvar->ts_lastack_rcvd,
-				   pkt->iph->id);
+				   pkt->iph->id, pkt->in_ifidx);
 
 
 	}
@@ -740,7 +740,7 @@ SendRSTPacketStandalone(mtcp_manager_t mtcp, struct tcp_stream *stream) {
 	SendTCPPacketStandalone(mtcp,
 				stream->saddr, stream->sport, stream->daddr, stream->dport,
 				stream->snd_nxt, stream->rcv_nxt, 0, TCP_FLAG_RST | TCP_FLAG_ACK,
-				NULL, 0, mtcp->cur_ts, 0, 0);
+				NULL, 0, mtcp->cur_ts, 0, 0, -1);
 }
 /*----------------------------------------------------------------------------*/
 /**

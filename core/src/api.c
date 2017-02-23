@@ -107,7 +107,7 @@ GetSocketError(socket_map_t socket, void *optval, socklen_t *optlen)
 		*optlen = sizeof(int);
 		
 		return -1;
-        }
+	}
 
 	/*
 	 * `base case`: If socket sees no so_error, then
@@ -305,6 +305,34 @@ mtcp_setsockopt(mctx_t mctx, int sockid, int level,
 		 */
 		
 		switch (optname) {
+		case MOS_CLIOVERLAP:
+			rb = (socket->monitor_stream->stream->side == MOS_SIDE_CLI) ?
+				socket->monitor_stream->stream->rcvvar->rcvbuf :
+			socket->monitor_stream->stream->pair_stream->rcvvar->rcvbuf;
+			if (rb == NULL) {
+				errno = EFAULT;
+				return -1;
+			}
+			if (tcprb_setpolicy(rb, *(uint8_t *)optval) < 0) {
+				errno = EINVAL;
+				return -1;
+			} else
+				return 0;
+			break;
+		case MOS_SVROVERLAP:
+			rb = (socket->monitor_stream->stream->side == MOS_SIDE_SVR) ?
+				socket->monitor_stream->stream->rcvvar->rcvbuf :
+			socket->monitor_stream->stream->pair_stream->rcvvar->rcvbuf;
+			if (rb == NULL) {
+				errno = EFAULT;
+				return -1;
+			}
+			if (tcprb_setpolicy(rb, *(uint8_t *)optval) < 0) {
+				errno = EINVAL;
+				return -1;
+			} else
+				return 0;
+			break;
 		case MOS_CLIBUF:
 #if 0
 			if (socket->socktype != MOS_SOCK_MONITOR_STREAM_ACTIVE) {
@@ -875,7 +903,7 @@ mtcp_accept(mctx_t mctx, int sockid, struct sockaddr *addr, socklen_t *addrlen)
 		AddEpollEvent(mtcp->ep, 
 			      USR_SHADOW_EVENT_QUEUE,
 			      listener->socket, MOS_EPOLLIN);
-
+	
 	TRACE_API("Stream %d accepted.\n", accepted->id);
 
 	if (addr && addrlen) {

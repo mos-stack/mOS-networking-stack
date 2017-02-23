@@ -81,7 +81,7 @@ __return:
 			HandleCallback(mtcp, MOS_NULL, walk->socket, MOS_SIDE_BOTH,
 				       pctx, MOS_ON_PKT_IN);
 	if (release && mtcp->iom->release_pkt)
-		mtcp->iom->release_pkt(mtcp->ctx, pctx->in_ifidx,
+		mtcp->iom->release_pkt(mtcp->ctx, pctx->p.in_ifidx,
 				       (unsigned char *)pctx->p.ethh, pctx->p.eth_len);
 	return ret;
 }

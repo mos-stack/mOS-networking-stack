@@ -293,7 +293,7 @@ dpdk_get_wptr(struct mtcp_thread_context *ctxt, int nif, uint16_t pktsize)
 	m->next = NULL;
 
 #ifdef NETSTAT
-	mtcp->nstat.tx_bytes[nif] += pktsize + 24;
+	mtcp->nstat.tx_bytes[nif] += pktsize + ETHER_OVR;
 #endif
 	
 	/* increment the len_of_mbuf var */
@@ -323,7 +323,7 @@ dpdk_set_wptr(struct mtcp_thread_context *ctxt, int out_nif, int in_nif, int ind
 	dpc->wmbufs[out_nif].m_table[len_of_mbuf]->udata64 = 0;
 	
 #ifdef NETSTAT
-	mtcp->nstat.tx_bytes[out_nif] += dpc->rmbufs[in_nif].m_table[index]->pkt_len + 24;
+	mtcp->nstat.tx_bytes[out_nif] += dpc->rmbufs[in_nif].m_table[index]->pkt_len + ETHER_OVR;
 #endif
 	
 	/* increment the len_of_mbuf var */

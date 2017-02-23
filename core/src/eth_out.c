@@ -53,7 +53,7 @@ FillOutPacketEthContext(struct pkt_ctx *pctx, uint32_t cur_ts, int out_ifidx,
 						struct ethhdr *ethh, int eth_len)
 {
 	pctx->p.cur_ts = cur_ts;
-	pctx->in_ifidx = -1;
+	pctx->p.in_ifidx = -1;
 	pctx->out_ifidx = out_ifidx;
 	pctx->p.ethh = ethh;
 	pctx->p.eth_len = eth_len;
@@ -108,7 +108,7 @@ ForwardEthernetFrame(struct mtcp_manager *mtcp, struct pkt_ctx *pctx)
 
 	if (g_config.mos->nic_forward_table != NULL) {
 		pctx->out_ifidx = 
-			g_config.mos->nic_forward_table->nic_fwd_table[pctx->in_ifidx];
+			g_config.mos->nic_forward_table->nic_fwd_table[pctx->p.in_ifidx];
 
 		if (pctx->out_ifidx == -1) {
 			TRACE_DBG("Could not find outgoing index (index)!\n");

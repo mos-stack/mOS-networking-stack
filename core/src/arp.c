@@ -386,7 +386,7 @@ ForwardARPPacket(struct mtcp_manager *mtcp, struct pkt_ctx *pctx)
       
 	if (g_config.mos->nic_forward_table != NULL) {
 		pctx->out_ifidx = 
-			g_config.mos->nic_forward_table->nic_fwd_table[pctx->in_ifidx];
+			g_config.mos->nic_forward_table->nic_fwd_table[pctx->p.in_ifidx];
 		if (pctx->out_ifidx != -1) {
 			haddr = pctx->p.ethh->h_dest;
 			struct arphdr *arph = (struct arphdr *)

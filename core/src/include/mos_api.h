@@ -121,6 +121,7 @@ typedef union event_data {
  */
 struct pkt_info {
 	uint32_t      cur_ts;    /**< packet receiving time (read-only:ro) */
+	int8_t        in_ifidx;  /**< input interface (ro) */
 	
 	/* ETH */
 	uint16_t      eth_len;
@@ -159,7 +160,6 @@ struct pkt_ctx {
 
 	int8_t        direction; /**< where does this packet originate from? (ro)*/
 	uint8_t       forward;   /**< 0: drop, 1: forward to out_ifidx (rw) */
-	int8_t        in_ifidx;  /**< input interface (ro) */
 	int8_t        out_ifidx; /**< output interface (rw) */
 	int8_t        batch_index; /**< index of packet in the rx batch */
 	/* ~~ 64 byte boundary ~~ */
@@ -240,6 +240,8 @@ enum mos_socket_opts {
 	MOS_STOP_MON		= 0x0c,
 	MOS_FRAG_CLIBUF   	= 0x0d,
 	MOS_FRAG_SVRBUF   	= 0x0e,
+	MOS_CLIOVERLAP		= 0x0f,
+	MOS_SVROVERLAP		= 0x10,
 #ifdef OLD_API
 	MOS_NO_CLIBUF		= 0x0f,
 	MOS_NO_SVRBUF		= 0x10,
@@ -301,6 +303,13 @@ enum tcpstate
 	TCP_CLOSING		= 8,
 	TCP_LAST_ACK		= 9,
 	TCP_TIME_WAIT		= 10
+};
+
+/** mOS segment overlapping policies */
+enum {
+	MOS_OVERLAP_POLICY_FIRST=0,
+	MOS_OVERLAP_POLICY_LAST,
+	MOS_OVERLAP_CNT
 };
 
 /** Definition of event type */
@@ -570,5 +579,19 @@ mtcp_set_debug_string(mtcp_manager_t mtcp, const char *fmt, ...);
 
 int
 mtcp_get_debug_string(mctx_t mctx, char *buf, int len);
+
+/**************************************************************************/
+/** Send a TCP packet of struct pkt_info
+ * @param [in] mctx: mTCP/mOS context
+ * @param [in] sock: monitoring stream socket id
+ * @param [in] pkt: ptr to packet info (e.g., captured by mtcp_getlastpkt)
+ * @return 0 on success, -1 on failure
+ * (NOTE: this function supports only TCP packet for now.
+ *  we will add the support for any ethernet packets when required)
+ */ 
+int
+mtcp_sendpkt(mctx_t mctx, int sock, const struct pkt_info *pkt);
+
+/**************************************************************************/
 
 #endif /* __MOS_API_H_ */

@@ -1384,13 +1384,13 @@ DoActionEndTCPPacket(mtcp_manager_t mtcp, struct tcp_stream *cur_stream,
 							pctx->p.iph->daddr, pctx->p.tcph->dest,
 							pctx->p.iph->saddr, pctx->p.tcph->source, 
 							0, pctx->p.seq + 1, 0, TCP_FLAG_RST | TCP_FLAG_ACK, 
-							NULL, 0, pctx->p.cur_ts, 0, 0);
+							NULL, 0, pctx->p.cur_ts, 0, 0, -1);
 				else
 					SendTCPPacketStandalone(mtcp, 
 							pctx->p.iph->daddr, pctx->p.tcph->dest,
 							pctx->p.iph->saddr, pctx->p.tcph->source, 
 							pctx->p.ack_seq, 0, 0, TCP_FLAG_RST | TCP_FLAG_ACK, 
-							NULL, 0, pctx->p.cur_ts, 0, 0);
+							NULL, 0, pctx->p.cur_ts, 0, 0, -1);
 				break;
 			case MOS_ACT_DESTROY:
 				DestroyTCPStream(mtcp, cur_stream);
@@ -1416,28 +1416,13 @@ UpdatePassiveRecvTCPContext(mtcp_manager_t mtcp, struct tcp_stream *cur_stream,
 	UpdateRecvTCPContext(mtcp, cur_stream, pctx);
 }
 /*----------------------------------------------------------------------------*/
-/* NOTE TODO: This event prediction is additional overhaed of POST_RCV hook.
+/* NOTE TODO: This event prediction is additional overhaed of HK_RCV hook.
  * We can transparently optimize this by disabling prediction of events which
  * are not monitored by anyone. */
 inline void
 PreRecvTCPEventPrediction(mtcp_manager_t mtcp, struct pkt_ctx *pctx,
 			  struct tcp_stream *recvside_stream)
 {
-#define DOESOVERLAP(a1, a2, b1, b2) \
-	((a1 != b2) && (a2 != b1) && ((a1 > b2) != (a2 > b1)))
-
-	/* Check whether this packet is retransmitted or not. */
-	tcprb_t *rb;
-	if (pctx->p.payloadlen > 0 && recvside_stream->rcvvar != NULL
-		&& (rb = recvside_stream->rcvvar->rcvbuf) != NULL) {
-		struct _tcpfrag_t *f;
-		loff_t off = seq2loff(rb, pctx->p.seq, recvside_stream->rcvvar->irs + 1);
-		TAILQ_FOREACH(f, &rb->frags, link)
-			if (DOESOVERLAP(f->head, f->tail, off, off + pctx->p.payloadlen)) {
-				recvside_stream->cb_events |= MOS_ON_REXMIT;
-				TRACE_DBG("RETX!\n");
-				break;
-			}
-	}
+	tcp_rb_overlapchk(mtcp, pctx, recvside_stream);
 }
 /*----------------------------------------------------------------------------*/

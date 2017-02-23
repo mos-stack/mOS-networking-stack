@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <sys/queue.h>
 #include <memory_mgt.h>
+#include "mos_api.h"
 
 /* Abstract ring buffer as an infinite but windowed buffer */
 /* Keep in mind about inc/dec buffer */
@@ -20,6 +21,14 @@
 #define BUFMGMT_OFF     0
 
 #define DISABLE_DYN_RESIZE
+
+#if 0
+typedef enum {
+	MOS_OVERLAP_POLICY_FIRST=0,
+	MOS_OVERLAP_POLICY_LAST,
+	MOS_OVERLAP_CNT
+} MOS_OVERLAP_POLICY;
+#endif
 
 enum tcprb_mode {
 	__RB_NO_FRAG = 1,
@@ -49,7 +58,8 @@ typedef struct _tcprb_t {
 	mem_pool_t mp;
 
 	unsigned mode:4,
-			 buf_mgmt:2;
+		buf_mgmt:2,
+		overlap:2;
 	int corr;
 
 	int metalen;
@@ -102,3 +112,10 @@ tcprb_printrb(struct _tcprb_t *rb);
 
 extern inline loff_t
 seq2loff(tcprb_t *rb, uint32_t seq, uint32_t isn);
+
+extern inline void
+tcp_rb_overlapchk(mtcp_manager_t mtcp, struct pkt_ctx *pctx,
+		  struct tcp_stream *recvside_stream);
+
+extern inline int
+tcprb_setpolicy(tcprb_t *rb, uint8_t policy);

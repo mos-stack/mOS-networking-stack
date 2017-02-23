@@ -45,6 +45,16 @@
 
 #define MAX_CPUS 16
 
+/*
+ * Ethernet frame overhead
+ */
+#ifndef ETHER_CRC_LEN
+#define ETHER_CRC_LEN			4
+#endif
+#define ETHER_IFG                       12
+#define ETHER_PREAMBLE                  8
+#define ETHER_OVR                       (ETHER_CRC_LEN + ETHER_PREAMBLE + ETHER_IFG)
+
 #ifndef ETH_ALEN
 #define ETH_ALEN 6
 #endif

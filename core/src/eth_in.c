@@ -14,7 +14,7 @@ FillInPacketEthContext (struct pkt_ctx *pctx, uint32_t cur_ts, int in_ifidx,
 		        int index, struct ethhdr *ethh, int eth_len)
 {
 	pctx->p.cur_ts = cur_ts;
-	pctx->in_ifidx = in_ifidx;
+	pctx->p.in_ifidx = in_ifidx;
 	pctx->out_ifidx = -1;
 	pctx->p.ethh = ethh;
 	pctx->p.eth_len = eth_len;
@@ -42,7 +42,7 @@ ProcessPacket(mtcp_manager_t mtcp, const int ifidx, const int index,
 
 #ifdef NETSTAT
 	mtcp->nstat.rx_packets[ifidx]++;
-	mtcp->nstat.rx_bytes[ifidx] += len + 24;
+	mtcp->nstat.rx_bytes[ifidx] += len + ETHER_OVR;
 #endif /* NETSTAT */
 
 	/**

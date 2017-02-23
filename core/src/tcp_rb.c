@@ -520,6 +520,16 @@ tcprb_resize_meta(tcprb_t *rb, int len)
 }
 /*--------------------------------------------------------------------------*/
 inline int
+tcprb_setpolicy(tcprb_t *rb, uint8_t policy)
+{
+	if (policy >= MOS_OVERLAP_CNT)
+		return -1;
+	
+	rb->overlap = policy;
+	return 0;
+}
+/*--------------------------------------------------------------------------*/
+inline int
 tcprb_resize(tcprb_t *rb, int len)
 {
 #ifdef DISABLE_DYN_RESIZE
@@ -716,7 +726,8 @@ tcprb_pwrite(tcprb_t *rb, uint8_t *buf, int len, loff_t off)
 		}
 
 		/* copy data */
-		if (!skip && rb->buf_mgmt)
+		if ((rb->overlap == MOS_OVERLAP_POLICY_LAST || !skip)
+			&& rb->buf_mgmt)
 			buf_write(rb, &buf[uoff], wrlen, off + uoff);
 		uoff += wrlen;
 	}
@@ -848,4 +859,36 @@ tcprb_printrb(struct _tcprb_t *rb)
 	tcprb_printbufsegs(rb);
 	printf("-------------------------------------------------\n");
 }
-/* -------------------------------------------------------------------------- */
+/*--------------------------------------------------------------------------*/
+inline void
+tcp_rb_overlapchk(mtcp_manager_t mtcp, struct pkt_ctx *pctx,
+		    struct tcp_stream *recvside_stream)
+{
+#define DOESOVERLAP(a1, a2, b1, b2)				\
+	((a1 != b2) && (a2 != b1) && ((a1 > b2) != (a2 > b1)))
+	
+	/* Check whether this packet is retransmitted or not. */
+	tcprb_t *rb;
+	struct socket_map *walk;
+	if (pctx->p.payloadlen > 0 && recvside_stream->rcvvar != NULL
+	    && (rb = recvside_stream->rcvvar->rcvbuf) != NULL) {
+		struct _tcpfrag_t *f;
+		loff_t off = seq2loff(rb, pctx->p.seq, recvside_stream->rcvvar->irs + 1);
+		TAILQ_FOREACH(f, &rb->frags, link)
+			if (DOESOVERLAP(f->head, f->tail, off, off + pctx->p.payloadlen)) {
+				/*
+				 * call it immediately (before pkt payload is attached
+				 * to the tcp ring buffer)
+				 */
+				SOCKQ_FOREACH_START(walk, &recvside_stream->msocks) {
+					HandleCallback(mtcp, MOS_HK_RCV, walk,
+						       recvside_stream->side,
+						       pctx, MOS_ON_REXMIT);
+				} SOCKQ_FOREACH_END;
+				/* recvside_stream->cb_events |= MOS_ON_REXMIT; */
+				TRACE_DBG("RETX!\n");
+				break;
+			}
+	}
+}
+/*--------------------------------------------------------------------------*/

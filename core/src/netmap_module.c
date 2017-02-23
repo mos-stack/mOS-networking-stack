@@ -121,7 +121,7 @@ netmap_send_pkts(struct mtcp_thread_context *ctxt, int nif)
 
 #ifdef NETSTAT
 	mtcp->nstat.tx_packets[nif]++;
-	mtcp->nstat.tx_bytes[nif] += pkt_size + 24;
+	mtcp->nstat.tx_bytes[nif] += pkt_size + ETHER_OVR;
 #endif
 	
  tx_again:

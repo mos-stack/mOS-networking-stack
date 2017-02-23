@@ -146,7 +146,7 @@ SendTCPPacketStandalone(struct mtcp_manager *mtcp,
 		uint32_t saddr, uint16_t sport, uint32_t daddr, uint16_t dport, 
 		uint32_t seq, uint32_t ack_seq, uint16_t window, uint8_t flags, 
 		uint8_t *payload, uint16_t payloadlen, 
-		uint32_t cur_ts, uint32_t echo_ts, uint16_t ip_id)
+		uint32_t cur_ts, uint32_t echo_ts, uint16_t ip_id, int8_t in_ifidx)
 {
 	struct tcphdr *tcph;
 	uint8_t *tcpopt;
@@ -156,6 +156,7 @@ SendTCPPacketStandalone(struct mtcp_manager *mtcp,
 	int rc = -1;
 	
 	memset(&pctx, 0, sizeof(pctx));
+	pctx.p.in_ifidx = in_ifidx;
 	optlen = CalculateOptionLength(flags);
 	if (payloadlen > TCP_DEFAULT_MSS + optlen) {
 		TRACE_ERROR("Payload size exceeds MSS.\n");
@@ -163,7 +164,7 @@ SendTCPPacketStandalone(struct mtcp_manager *mtcp,
 		return ERROR;
 	}
 
-	tcph = (struct tcphdr *)IPOutputStandalone(mtcp, 0, 
+	tcph = (struct tcphdr *)IPOutputStandalone(mtcp, htons(ip_id), 
 			saddr, daddr, TCP_HEADER_LEN + optlen + payloadlen, &pctx, cur_ts);
 	if (tcph == NULL) {
 		return ERROR;

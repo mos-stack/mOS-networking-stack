@@ -487,7 +487,7 @@ ProcessInTCPPacket(mtcp_manager_t mtcp, struct pkt_ctx *pctx)
 				SendTCPPacketStandalone(mtcp,
 							iph->daddr, tcph->dest, iph->saddr, tcph->source,
 							0, pctx->p.seq + pctx->p.payloadlen + 1, 0, TCP_FLAG_RST | TCP_FLAG_ACK,
-							NULL, 0, pctx->p.cur_ts, 0, 0);
+							NULL, 0, pctx->p.cur_ts, 0, 0, -1);
 		} else if (pctx->forward) {
 			/* Do forward or drop if it run as Monitor only mode */
 			ForwardIPPacket(mtcp, pctx);

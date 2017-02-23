@@ -50,7 +50,7 @@ ForwardIPPacket(mtcp_manager_t mtcp, struct pkt_ctx *pctx)
 
 	if (g_config.mos->nic_forward_table != NULL) {
 		pctx->out_ifidx = 
-			g_config.mos->nic_forward_table->nic_fwd_table[pctx->in_ifidx];
+			g_config.mos->nic_forward_table->nic_fwd_table[pctx->p.in_ifidx];
 		if (pctx->out_ifidx != -1) {
 			haddr = pctx->p.ethh->h_dest;
 			goto fast_tx;
@@ -90,7 +90,7 @@ ForwardIPPacket(mtcp_manager_t mtcp, struct pkt_ctx *pctx)
 			pctx->p.ethh->h_source[i] = g_config.mos->netdev_table->ent[pctx->out_ifidx]->haddr[i];
 			pctx->p.ethh->h_dest[i] = haddr[i];
 		}
-		mtcp->iom->set_wptr(mtcp->ctx, pctx->out_ifidx, pctx->in_ifidx, pctx->batch_index);
+		mtcp->iom->set_wptr(mtcp->ctx, pctx->out_ifidx, pctx->p.in_ifidx, pctx->batch_index);
 		return;
 	}
 #endif
