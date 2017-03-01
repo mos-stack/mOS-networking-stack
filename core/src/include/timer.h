@@ -1,16 +1,21 @@
 #ifndef __TIMER_H_
 #define __TIMER_H_
-
+/*----------------------------------------------------------------------------*/
 #include "mtcp.h"
 #include "tcp_stream.h"
-
+#include <sys/time.h>
+/*----------------------------------------------------------------------------*/
 #define RTO_HASH 2048
+/*----------------------------------------------------------------------------*/
+#define TIMEVAL_ADD(a, b) \
+do { (a)->tv_sec += (b)->tv_sec; \
+	if (((a)->tv_usec += (b)->tv_usec) > 1000000) { \
+		(a)->tv_sec++; (a)->tv_usec -= 1000000; } \
+} while (0)
 
-#define TIMEVAL_LT(a, b) \
-	(((a)->tv_sec < (b)->tv_sec) ? 1 : \
-	 ((a)->tv_sec < (b)->tv_sec) ? 1 : \
-	 ((a)->tv_usec < (b)->tv_usec) ? 1 : 0)
-
+#define TIMEVAL_LT(a, b)			\
+	timercmp(a, b, <)
+/*----------------------------------------------------------------------------*/
 struct timer {
 	int id;
 	struct timeval exp; /* expiration time */
@@ -26,7 +31,7 @@ struct rto_hashstore
 	
 	TAILQ_HEAD(rto_head , tcp_stream) rto_list[RTO_HASH+1];
 };
-
+/*----------------------------------------------------------------------------*/
 struct rto_hashstore* 
 InitRTOHashstore();
 
@@ -66,5 +71,5 @@ CheckConnectionTimeout(mtcp_manager_t mtcp, uint32_t cur_ts, int thresh);
 
 void
 DelTimer(mtcp_manager_t mtcp, struct timer *timer);
-
+/*----------------------------------------------------------------------------*/
 #endif /* __TIMER_H_ */

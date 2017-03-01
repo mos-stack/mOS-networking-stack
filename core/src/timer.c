@@ -524,12 +524,6 @@ CheckConnectionTimeout(mtcp_manager_t mtcp, uint32_t cur_ts, int thresh)
 	}
 }
 /*----------------------------------------------------------------------------*/
-#define TIMEVAL_ADD(a, b) \
-do { (a)->tv_sec += (b)->tv_sec; \
-	if (((a)->tv_usec += (b)->tv_usec) > 1000000) { \
-		(a)->tv_sec++; (a)->tv_usec -= 1000000; } \
-} while (0)
-/*----------------------------------------------------------------------------*/
 static int
 RegTimer(mtcp_manager_t mtcp, struct timer *timer)
 {
