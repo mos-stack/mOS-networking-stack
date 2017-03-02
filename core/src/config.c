@@ -34,6 +34,7 @@
 int8_t end_app_exists = 0;
 int8_t mon_app_exists = 0;
 addr_pool_t ap[ETH_NUM] = {NULL};
+char *file = NULL;
 /*----------------------------------------------------------------------------*/
 /* return 0 on failure */
 #define MATCH_ITEM(name, item) \
@@ -245,7 +246,8 @@ FeedNetdevConfLine(struct conf_block *blk, char *line, int len)
 	ent->cpu_mask = cpu_mask;
 	g_config.mos->cpu_mask |= cpu_mask;
 
-	strcpy(ent->ifr.ifr_name, ent->dev_name);
+	strncpy(ent->ifr.ifr_name, ent->dev_name, IFNAMSIZ);
+	ent->ifr.ifr_name[IFNAMSIZ] = '\0';
 
 #ifdef ENABLE_DPDKR
 #define DPDKR_PORT_DIR "/usr/local/var/run/openvswitch/port/"
@@ -1002,10 +1004,10 @@ ReadConf(const char *fname)
 	int size = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
 
-	char *file = calloc(1, size + 1);
+	file = calloc(1, size + 1);
 	if (file == NULL) {
 		TRACE_ERROR("Can't allocate memory for file!\n");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 
 	file[size] = '\0';
@@ -1302,6 +1304,15 @@ LoadConfigurationLowerHalf(void)
 				nicfwd_conf->nic_fwd_table[nif_out] = nif_in;
 			nif_in = nif_out = -1;
 		}
+	}
+}
+/*----------------------------------------------------------------------------*/
+void
+FreeConfigResources()
+{
+	if (file) {
+		free(file);
+		file = NULL;
 	}
 }
 /*----------------------------------------------------------------------------*/

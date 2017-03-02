@@ -86,6 +86,7 @@ HandleSignal(int signal)
 	int i = 0;
 
 	if (signal == SIGINT) {
+		FreeConfigResources();
 #ifdef DARWIN
 		int core = 0;
 #else
@@ -1607,8 +1608,10 @@ mtcp_getconf(struct mtcp_conf *conf)
 {
 	int i, j;
 
-	if (!conf)
+	if (!conf) {
+		errno = EINVAL;
 		return -1;
+	}
 
 	conf->num_cores = g_config.mos->num_cores;
 	conf->max_concurrency = g_config.mos->max_concurrency;

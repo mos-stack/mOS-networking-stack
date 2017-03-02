@@ -1,6 +1,6 @@
 #ifndef __CONFIG_H_
 #define __CONFIG_H_
-
+/*----------------------------------------------------------------------------*/
 #include <sys/queue.h>
 #include <stdint.h>
 #include <net/if.h>
@@ -172,7 +172,7 @@ int num_devices;
 
 int num_devices_attached;
 int devices_attached[MAX_DEVICES];
-
+/*----------------------------------------------------------------------------*/
 int
 LoadConfigurationUpperHalf(const char *fname);
 
@@ -205,4 +205,7 @@ ParseMACAddress(unsigned char *haddr, char *haddr_str);
 int
 ParseIPAddress(uint32_t *ip_addr, char *ip_str);
 
+void
+FreeConfigResources();
+/*----------------------------------------------------------------------------*/
 #endif /* __CONFIG_H_ */

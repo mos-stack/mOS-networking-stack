@@ -812,6 +812,7 @@ mtcp_listen(mctx_t mctx, int sockid, int backlog)
 
 	listener->acceptq = CreateStreamQueue(backlog);
 	if (!listener->acceptq) {
+		free(listener);
 		errno = ENOMEM;
 		return -1;
 	}
@@ -936,6 +937,11 @@ mtcp_init_rss(mctx_t mctx, in_addr_t saddr_base, int num_addr,
 		/* for the INADDR_ANY, find the output interface for the destination
 		   and set the saddr_base as the ip address of the output interface */
 		nif_out = GetOutputInterface(daddr);
+		if (nif_out < 0) {
+			TRACE_DBG("Could not determine nif idx!\n");
+			errno = EINVAL;
+			return -1;
+		}
 		saddr_base = g_config.mos->netdev_table->ent[nif_out]->ip_addr;
 	}
 
@@ -991,7 +997,7 @@ mtcp_connect(mctx_t mctx, int sockid,
 	in_addr_t dip;
 	in_port_t dport;
 	int is_dyn_bound = FALSE;
-	int ret;
+	int ret, nif;
 	int cnt_match = 0;
 	struct mon_listener *walk;
 	struct sfbpf_program fcode;
@@ -1067,7 +1073,12 @@ mtcp_connect(mctx_t mctx, int sockid,
 			ret = FetchAddress(mtcp->ap, 
 					mctx->cpu, num_queues, addr_in, &socket->saddr);
 		} else {
-			ret = FetchAddress(ap[GetOutputInterface(dip)], 
+			nif = GetOutputInterface(dip);
+			if (nif < 0) {
+				errno = EINVAL;
+				return -1;
+			}
+			ret = FetchAddress(ap[nif], 
 					   mctx->cpu, num_queues, addr_in, &socket->saddr);
 		}
 		if (ret < 0) {

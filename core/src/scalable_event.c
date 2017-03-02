@@ -513,7 +513,12 @@ RegCb(kvs_t *store, stree_t **pstree, event_t ev, callback_t cb)
 					if (!IS_FLOATING_EVENT(ntn))
 						TREE_INSERT_CHILD(ptn, ntn, invk);
 				} else {
+					if (ntree)
+						tree_del_recursive(ntree);
+					free(ntn);
+					TRACE_ERROR("Can't find parent\n");
 					assert(0);
+					exit(EXIT_FAILURE);
 				}
 			}
 		}

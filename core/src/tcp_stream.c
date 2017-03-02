@@ -918,7 +918,12 @@ DestroySingleTCPStream(mtcp_manager_t mtcp, tcp_stream *stream)
 		} else {
 			int nif;
 			nif = GetOutputInterface(addr.sin_addr.s_addr);
-			ret = FreeAddress(ap[nif], &addr);
+			if (nif < 0) {
+				TRACE_ERROR("Can't determine interface idx!\n");
+				exit(EXIT_FAILURE);
+			} else {
+				ret = FreeAddress(ap[nif], &addr);
+			}
 		}
 		if (ret < 0) {
 			TRACE_ERROR("(NEVER HAPPEN) Failed to free address.\n");

@@ -73,6 +73,7 @@ mtcp_core_affinitize(int cpu)
 
 	ret = fscanf(fp, "%d", &phy_id);
 	if (ret != 1) {
+		fclose(fp);
 		perror("Fail to read core id");
 		errno = EFAULT;
 		return -1;
