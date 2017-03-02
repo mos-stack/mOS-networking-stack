@@ -23,9 +23,6 @@
 #define MAX(a, b) ((a)>(b)?(a):(b))
 #define MIN(a, b) ((a)<(b)?(a):(b))
 
-extern struct pkt_info *
-ClonePacketCtx(struct pkt_info *to, unsigned char *frame, struct pkt_ctx *from);
-
 /*----------------------------------------------------------------------------*/
 static inline uint16_t
 CalculateOptionLength(uint8_t flags)

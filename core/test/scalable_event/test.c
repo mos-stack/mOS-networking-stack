@@ -232,6 +232,7 @@ int main(int argc, char **argv)
 	PROFILE_PRINT(stdout);
 	printf("Avg CB %f Avg FT %f\n", cb_counter*1.000000/LCOUNT, ft_counter*1.0/LCOUNT);
 
+#ifdef DO_SNORT_SIM
 	/*--------------------------------------------------------------------*/
 	/* selective event invocation test                                    */
 	/*--------------------------------------------------------------------*/
@@ -287,6 +288,7 @@ int main(int argc, char **argv)
 		printf("%d / %d callbacks are called; %s\n",
 				cb_counter, REPEAT, cb_counter == REPEAT ? "SUCCESS" : "FAILURE");
 	}
+#endif
 
 	return 0;
 }

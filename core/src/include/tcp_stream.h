@@ -58,6 +58,13 @@ do { \
 		((var) = __walk ? __walk->sock : NULL, __walk); \
 		__walk = __temp) { \
 		__temp = ((__walk)->link.tqe_next);
+#define SOCKQ_FOREACH_REVERSE(var, head) \
+	do { \
+        struct sockent *__walk, *__temp; \
+        for (__walk = (*(((struct mlist *)((head)->tqh_last))->tqh_last));	\
+	((var) = __walk ? __walk->sock : NULL, __walk); \
+	     __walk = __temp) { \
+        __temp = (*(((struct mlist *)((__walk)->link.tqe_prev))->tqh_last));
 #define SOCKQ_FOREACH_END }} while (0)
 /*----------------------------------------------------------------------------*/
 
@@ -223,7 +230,7 @@ typedef struct tcp_stream
 	 * in future revisions...
 	 */
 
-	SOCKQ_HEAD() msocks;        /* in case monitoring is enabled */
+	SOCKQ_HEAD(mlist) msocks;        /* in case monitoring is enabled */
 	socket_map_t socket;		/* relating to MOS_SOCK_STREAM */
 
 	uint32_t id;
@@ -268,9 +275,10 @@ typedef struct tcp_stream
 	uint32_t last_active_ts;		/* ts_last_ack_sent or ts_last_ts_upd */
 
 	struct tcp_stream *pair_stream; /* pair stream in case of monitor / proxy socket */
-
+#ifdef RECORDPKT_PER_STREAM
 	struct pkt_ctx last_pctx;
 	unsigned char  last_pkt_data[ETHERNET_FRAME_LEN];
+#endif
 
 } tcp_stream;
 

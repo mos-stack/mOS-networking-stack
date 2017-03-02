@@ -408,26 +408,27 @@ mtcp_ppeek(mctx_t mctx, int msock, int side,
 #ifdef MTCP_CB_GETCURPKT_CREATE_COPY
 static __thread unsigned char local_frame[ETHERNET_FRAME_LEN];
 inline struct pkt_info *
-ClonePacketCtx(struct pkt_info *to, unsigned char *frame, struct pkt_ctx *from)
+ClonePacketCtx(struct pkt_info *to, unsigned char *frame, struct pkt_info *from)
 {
-	/* only memcpy till the last field before ethh */
-	/* memcpy(to, from, PCTX_COPY_LEN); */
-	memcpy(to, &(from->p), PKT_INFO_LEN);
 	/* memcpy the entire ethernet frame */
 	assert(from);
-	assert(from->p.eth_len > 0);
-	assert(from->p.eth_len <= ETHERNET_FRAME_LEN);
-	memcpy(frame, from->p.ethh, from->p.eth_len);
+	assert(from->eth_len > 0);
+	assert(from->eth_len <= ETHERNET_FRAME_LEN);
+	memcpy(frame, from->ethh, from->eth_len);
+
+	/* only memcpy till the last field before ethh */
+	/* memcpy(to, from, PCTX_COPY_LEN); */
+	memcpy(to, from, PKT_INFO_LEN);
 	/* set iph */
 	to->ethh = (struct ethhdr *)frame;
 	/* set iph */
-	to->iph = from->p.iph ?
+	to->iph = from->iph ?
 		(struct iphdr *)((uint8_t *)(frame + ETHERNET_HEADER_LEN)) : NULL;
 	/* set tcph */
-	to->tcph = from->p.tcph ?
+	to->tcph = from->tcph ?
 		(struct tcphdr *)(((uint8_t *)(to->iph)) + (to->iph->ihl<<2)) : NULL;
 	/* set payload */
-	to->payload = from->p.tcph ?
+	to->payload = from->tcph ?
 		((uint8_t *)(to->tcph) + (to->tcph->doff<<2)) : NULL;
 	return to;
 }
@@ -437,7 +438,6 @@ mtcp_getlastpkt(mctx_t mctx, int sock, int side, struct pkt_info *pkt)
 {
 	mtcp_manager_t mtcp;
 	socket_map_t socket;
-	struct tcp_stream *cur_stream;
 	struct pkt_ctx *cur_pkt_ctx;
 
 	mtcp = GetMTCPManager(mctx);
@@ -454,7 +454,24 @@ mtcp_getlastpkt(mctx_t mctx, int sock, int side, struct pkt_info *pkt)
 	
 	/* check if the socket is monitor stream */
 	socket = &mtcp->msmap[sock];
-
+#ifndef RECORDPKT_PER_STREAM 
+	switch (socket->socktype) {
+	case MOS_SOCK_MONITOR_STREAM_ACTIVE:
+	case MOS_SOCK_MONITOR_RAW:
+	case MOS_SOCK_MONITOR_STREAM:
+		if (mtcp->pctx == NULL) {
+			errno = EACCES;
+			return -1;
+		}
+		cur_pkt_ctx = mtcp->pctx;
+		break;
+	default:
+		TRACE_DBG("Invalid socket type!\n");
+		errno = EBADF;
+		return -1;		
+	}
+#else /* RECORDPKT_PER_STREAM */
+	struct tcp_stream *cur_stream;
 	if (socket->socktype == MOS_SOCK_MONITOR_STREAM_ACTIVE) {
 		if (side != MOS_SIDE_CLI && side != MOS_SIDE_SVR) {
 			TRACE_ERROR("Invalid side requested!\n");
@@ -483,8 +500,8 @@ mtcp_getlastpkt(mctx_t mctx, int sock, int side, struct pkt_info *pkt)
 		errno = EBADF;
 		return -1;
 	}
-
-	ClonePacketCtx(pkt, local_frame, cur_pkt_ctx);
+#endif /* !RECORDPKT_PER_STREAM */ 
+	ClonePacketCtx(pkt, local_frame, &(cur_pkt_ctx->p));
 	return 0;
 }
 #else

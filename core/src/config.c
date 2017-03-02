@@ -224,7 +224,7 @@ FeedNetdevConfLine(struct conf_block *blk, char *line, int len)
 	int i;
 #endif
 	uint64_t cpu_mask;
-	char *word;
+	char *word = NULL;
 	int wlen;
 
 	if (DetectWord(line, len, &word, &wlen) < 0 || wlen > WORD_LEN || wlen <= 0)
@@ -736,7 +736,7 @@ FetchARPKernelEntries(struct arp_conf * const config)
 	char ip[ENTRY_LEN];
 	char hwa[ENTRY_LEN];
 	char mask[ENTRY_LEN];
-	char dev[ENTRY_LEN];
+	char dev[WORD_LEN];
 	char line[LINE_LEN];
 	int type, flags, num;
 
@@ -802,7 +802,7 @@ FetchRouteKernelEntries(struct route_conf * const config)
 	uint32_t gate;
 	uint32_t dest;
 	uint32_t mask;
-	char dev[ENTRY_LEN];
+	char dev[WORD_LEN];
 	char line[LINE_LEN];
 	char mtu[ENTRY_LEN];
 	char win[ENTRY_LEN];
@@ -1114,7 +1114,7 @@ struct conf_block *
 DetectBlock(struct conf_block *blk, char *buf, int len)
 {
 	int depth = 0;
-	char *blkname, *end = &buf[len];
+	char *blkname = NULL, *end = &buf[len];
 	int blknamelen;
 	struct conf_block *nblk;
 

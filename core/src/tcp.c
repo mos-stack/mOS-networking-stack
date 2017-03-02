@@ -18,7 +18,7 @@
 #include "config.h"
 
 extern struct pkt_info *
-ClonePacketCtx(struct pkt_info *to, unsigned char *frame, struct pkt_ctx *from);
+ClonePacketCtx(struct pkt_info *to, unsigned char *frame, struct pkt_info *from);
 
 #define VERIFY_RX_CHECKSUM	TRUE
 /*----------------------------------------------------------------------------*/
@@ -289,10 +289,11 @@ UpdateMonitor(mtcp_manager_t mtcp, struct tcp_stream *sendside_stream,
 
 	assert(pctx);
 
+#ifdef RECORDPKT_PER_STREAM 
 	/* clone sendside_stream even if sender is disabled */
 	ClonePacketCtx(&sendside_stream->last_pctx.p,
-		       sendside_stream->last_pkt_data, pctx);
-
+		       sendside_stream->last_pkt_data, &(pctx.p));
+#endif
 	/* update send stream context first */
 	if (sendside_stream->status_mgmt) {
 		sendside_stream->cb_events = MOS_ON_PKT_IN;

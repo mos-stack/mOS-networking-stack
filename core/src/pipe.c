@@ -89,8 +89,8 @@ mtcp_pipe(mctx_t mctx, int pipeid[2])
 		FreeSocket(mctx, socket[0]->id, MOS_SOCK_PIPE);
 		FreeSocket(mctx, socket[1]->id, MOS_SOCK_PIPE);
 		free(pp->buf);
-		free(pp);
 		pthread_mutex_destroy(&pp->pipe_lock);
+		free(pp);
 		return -1;
 	}
 
