@@ -434,7 +434,7 @@ FlushMonitorReadEvents(mtcp_manager_t mtcp)
 				(struct tcp_stream *)mtcpq->events[mtcpq->start++].ev.data.ptr;
 			/* only read events */
 			if (cur_stream != NULL &&
-					(cur_stream->socket->events | MOS_EPOLLIN)) {
+			    (cur_stream->actions & MOS_ACT_READ_DATA)) {
 				if (cur_stream->rcvvar != NULL &&
 						cur_stream->rcvvar->rcvbuf != NULL) {
 					/* no need to pass pkt context */
@@ -479,14 +479,14 @@ FlushBufferedReadEvents(mtcp_manager_t mtcp)
 		/* only read events */
 		/* Raise new data callback event */
 		if (cur_stream != NULL &&
-				(cur_stream->socket->events | MOS_EPOLLIN)) {
+		    	(cur_stream->socket->events | MOS_EPOLLIN)) {
 			if (cur_stream->rcvvar != NULL &&
 					cur_stream->rcvvar->rcvbuf != NULL) {
 				/* no need to pass pkt context */
 				struct socket_map *walk;
 				SOCKQ_FOREACH_START(walk, &cur_stream->msocks) {
 					HandleCallback(mtcp, MOS_NULL, walk, cur_stream->side,
-							NULL, MOS_ON_CONN_NEW_DATA);
+						       NULL, MOS_ON_CONN_NEW_DATA);
 				} SOCKQ_FOREACH_END;
 			}
 		}
@@ -1077,7 +1077,7 @@ InitializeMTCPManager(struct mtcp_thread_context* ctx)
 	mtcp = (mtcp_manager_t)calloc(1, sizeof(struct mtcp_manager));
 	if (!mtcp) {
 		perror("malloc");
-		CTRACE_ERROR("Failed to allocate mtcp_manager.\n");
+		fprintf(stderr, "Failed to allocate mtcp_manager.\n");
 		return NULL;
 	}
 	g_mtcp[ctx->cpu] = mtcp;

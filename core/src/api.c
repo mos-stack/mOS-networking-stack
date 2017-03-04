@@ -802,11 +802,13 @@ mtcp_listen(mctx_t mctx, int sockid, int backlog)
 	if (pthread_cond_init(&listener->accept_cond, NULL)) {
 		perror("pthread_cond_init of ctx->accept_cond\n");
 		/* errno set by pthread_cond_init() */
+		free(listener);
 		return -1;
 	}
 	if (pthread_mutex_init(&listener->accept_lock, NULL)) {
 		perror("pthread_mutex_init of ctx->accept_lock\n");
 		/* errno set by pthread_mutex_init() */
+		free(listener);
 		return -1;
 	}
 

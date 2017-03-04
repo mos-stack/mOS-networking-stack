@@ -529,6 +529,7 @@ RegCb(kvs_t *store, stree_t **pstree, event_t ev, callback_t cb)
 	if (nstree == NULL) {
 		TRACE_ERROR("Failed to create stree!\n");
 		assert(nstree);
+		exit(EXIT_FAILURE);
 	}
 	nstree->ref_cnt = 1;
 	kvs_insert(store, nid, nstree);
@@ -650,8 +651,9 @@ UnregCb(kvs_t *store, stree_t **pstree, event_t ev)
 		
 		nstree = stree_create(nid, ntree);
 		if (nstree == NULL) {
-			TRACE_ERROR("Failed to create stree!\n");		
+			TRACE_ERROR("Failed to create stree!\n");
 			assert(nstree);
+			exit(EXIT_FAILURE);
 		}
 		
 		nstree->ref_cnt = 1;

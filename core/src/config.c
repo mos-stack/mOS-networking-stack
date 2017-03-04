@@ -81,7 +81,7 @@ SetMultiProcessSupport(char *multiprocess_details)
 		TRACE_CONFIG("No option for multi-process support given!\n");
 		return -1;
 	}
-	g_config.mos->multiprocess_curr_core = atoi(sample);
+	g_config.mos->multiprocess_curr_core = mystrtol(sample, 10);
 	
 	sample = strtok_r(NULL, token, &saveptr);
 	if (sample != NULL && !strcmp(sample, "master"))
@@ -246,7 +246,7 @@ FeedNetdevConfLine(struct conf_block *blk, char *line, int len)
 	ent->cpu_mask = cpu_mask;
 	g_config.mos->cpu_mask |= cpu_mask;
 
-	strncpy(ent->ifr.ifr_name, ent->dev_name, IFNAMSIZ);
+	strncpy(ent->ifr.ifr_name, ent->dev_name, IFNAMSIZ-1);
 	ent->ifr.ifr_name[IFNAMSIZ] = '\0';
 
 #ifdef ENABLE_DPDKR

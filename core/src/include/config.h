@@ -207,5 +207,8 @@ ParseIPAddress(uint32_t *ip_addr, char *ip_str);
 
 void
 FreeConfigResources();
+
+int
+mystrtol(const char *nptr, int base);
 /*----------------------------------------------------------------------------*/
 #endif /* __CONFIG_H_ */

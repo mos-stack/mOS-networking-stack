@@ -10,7 +10,6 @@
 #endif
 #include "debug.h"
 #include "memory_mgt.h"
-
 //#define SYS_MALLOC
 
 typedef struct tag_mem_chunk
@@ -73,7 +72,7 @@ MPCreate(int chunk_size, size_t total_size, int is_hugepage)
 		if (!mp->mp_startptr) {
 			TRACE_ERROR("posix_memalign failed, size=%ld\n", total_size);
 			assert(0);
-			if (mp) free(mp);
+			free(mp);
 			return (NULL);
 		}
 	} else {
@@ -82,7 +81,7 @@ MPCreate(int chunk_size, size_t total_size, int is_hugepage)
 		if (res != 0) {
 			TRACE_ERROR("posix_memalign failed, size=%ld\n", total_size);
 			assert(0);
-			if (mp) free(mp);
+			free(mp);
 			return (NULL);
 		}
 #ifdef HUGETABLE

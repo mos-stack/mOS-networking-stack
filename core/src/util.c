@@ -15,6 +15,10 @@
 #include <string.h>
 #include <ctype.h>
 #include <mtcp_util.h>
+#include <limits.h>
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
 
 /*-------------------------------------------------------------*/ 
 static void 
@@ -113,6 +117,28 @@ GetRSSCPUCore(in_addr_t sip, in_addr_t dip,
 
 }
 /*-------------------------------------------------------------*/ 
+int
+mystrtol(const char *nptr, int base)
+{
+	int rval;
+	char *endptr;
+
+	rval = strtol(nptr, &endptr, 10);
+	/* check for strtol errors */
+	if ((errno == ERANGE && (rval == LONG_MAX ||
+				 rval == LONG_MIN))
+	    || (errno != 0 && rval == 0)) {
+		perror("strtol");
+		exit(EXIT_FAILURE);
+	}
+	if (endptr == nptr) {
+		fprintf(stderr, "Parsing strtol error!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return rval;
+}
+/*---------------------------------------------------------------*/
 int
 StrToArgs(char *str, int *argc, char **argv, int max_argc)
 {
