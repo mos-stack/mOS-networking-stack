@@ -247,7 +247,7 @@ FeedNetdevConfLine(struct conf_block *blk, char *line, int len)
 	g_config.mos->cpu_mask |= cpu_mask;
 
 	strncpy(ent->ifr.ifr_name, ent->dev_name, IFNAMSIZ-1);
-	ent->ifr.ifr_name[IFNAMSIZ] = '\0';
+	ent->ifr.ifr_name[IFNAMSIZ-1] = '\0';
 
 #ifdef ENABLE_DPDKR
 #define DPDKR_PORT_DIR "/usr/local/var/run/openvswitch/port/"

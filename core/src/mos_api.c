@@ -424,12 +424,15 @@ ClonePacketCtx(struct pkt_info *to, unsigned char *frame, struct pkt_info *from)
 	/* set iph */
 	to->iph = from->iph ?
 		(struct iphdr *)((uint8_t *)(frame + ETHERNET_HEADER_LEN)) : NULL;
-	/* set tcph */
-	to->tcph = from->tcph ?
-		(struct tcphdr *)(((uint8_t *)(to->iph)) + (to->iph->ihl<<2)) : NULL;
-	/* set payload */
-	to->payload = from->tcph ?
-		((uint8_t *)(to->tcph) + (to->tcph->doff<<2)) : NULL;
+	if (to->iph) {
+		/* set tcph */
+		to->tcph = from->tcph ?
+			(struct tcphdr *)(((uint8_t *)(to->iph)) + (to->iph->ihl<<2)) : NULL;
+		if (to->tcph)
+			/* set payload */
+			to->payload = from->tcph ?
+				((uint8_t *)(to->tcph) + (to->tcph->doff<<2)) : NULL;
+	}
 	return to;
 }
 /*----------------------------------------------------------------------------*/
