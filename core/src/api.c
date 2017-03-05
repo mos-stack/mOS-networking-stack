@@ -1563,16 +1563,13 @@ mtcp_recv(mctx_t mctx, int sockid, char *buf, size_t len, int flags)
 	
 	/* if CLOSE_WAIT, return 0 if there is no payload */
 	if (cur_stream->state == TCP_ST_CLOSE_WAIT) {
-		if (!rcvvar->rcvbuf)
-			return 0;
-		
 		if (merged_len == 0)
 			return 0;
 	}
 	
 	/* return EAGAIN if no receive buffer */
 	if (socket->opts & MTCP_NONBLOCK) {
-		if (!rcvvar->rcvbuf || merged_len == 0) {
+		if (merged_len == 0) {
 			errno = EAGAIN;
 			return -1;
 		}
@@ -1665,7 +1662,7 @@ mtcp_readv(mctx_t mctx, int sockid, const struct iovec *iov, int numIOV)
 
 	/* stream should be in ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2, CLOSE_WAIT */
 	cur_stream = socket->stream;
-	if (!cur_stream || 
+	if (!cur_stream || !cur_stream->rcvvar->rcvbuf ||
 			!(cur_stream->state >= TCP_ST_ESTABLISHED && 
 			  cur_stream->state <= TCP_ST_CLOSE_WAIT)) {
 		errno = ENOTCONN;
@@ -1678,16 +1675,13 @@ mtcp_readv(mctx_t mctx, int sockid, const struct iovec *iov, int numIOV)
 
 	/* if CLOSE_WAIT, return 0 if there is no payload */
 	if (cur_stream->state == TCP_ST_CLOSE_WAIT) {
-		if (!rcvvar->rcvbuf)
-			return 0;
-		
 		if (merged_len == 0)
 			return 0;
 	}
 
 	/* return EAGAIN if no receive buffer */
 	if (socket->opts & MTCP_NONBLOCK) {
-		if (!rcvvar->rcvbuf || merged_len == 0) {
+		if (merged_len == 0) {
 			errno = EAGAIN;
 			return -1;
 		}

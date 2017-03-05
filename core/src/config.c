@@ -336,6 +336,7 @@ FeedNetdevConfLine(struct conf_block *blk, char *line, int len)
 	int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
 	if (sock == -1) {
 		perror("socket");
+		exit(EXIT_FAILURE);
 	}			
 	
 	/* getting address */
@@ -992,7 +993,7 @@ __error:
 static char *
 ReadConf(const char *fname)
 {
-	size_t hav_read = 0;
+	size_t hav_read = 0, rc;
 	FILE *fp = fopen(fname, "r");
 	if (fp == NULL) {
 		TRACE_ERROR("Cannot open the config file %s\n", fname);
@@ -1012,7 +1013,12 @@ ReadConf(const char *fname)
 
 	file[size] = '\0';
 
-	while ((hav_read += fread(file, 1, size, fp)) < size);
+	while (hav_read < size) {
+		rc = fread(file, 1, size, fp);
+		/* sanity check */
+		if (rc <= 0) break;
+		hav_read += rc;
+	}
 
 	fclose(fp);
 
