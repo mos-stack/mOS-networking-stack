@@ -4,7 +4,6 @@
 DISABLE_NUMA=@NONUMA@
 ENABLE_DPDK=@DPDK@
 ENABLE_PCAP=@PCAP@
-ENABLE_DPDKR=@DPDKR@
 ENABLE_NETMAP=@NETMAP@
 
 ### TARGET ###
@@ -70,18 +69,6 @@ ifeq ($(ENABLE_NETMAP), 1)
 INC += -DENABLE_NETMAP
 endif
 
-ifeq ($(ENABLE_DPDKR), 1)
-## DPDK RING (VIRTUAL PORT)
-DPDK_INC=../../../ovs-l7/dpdk-2.0.0/x86_64-native-linuxapp-gcc/include
-DPDK_LIB=../../../ovs-l7/dpdk-2.0.0/x86_64-native-linuxapp-gcc/lib
-# CFLAGS for DPDK-related compilation
-#DPDK_MACHINE_FLAGS = $(shell cat $(DPDK_INC)/cflags.txt)
-INC += -DENABLE_DPDKR ${DPDK_MACHINE_FLAGS} -I${DPDK_INC} -include $(DPDK_INC)/rte_config.h
-INC += -I../../../ovs-l7/ovs -I/usr/include # dpdkr
-INC += -mssse3 # dpdkr
-LIBS += -export-dynamic -L$(DPDK_LIB)
-endif
-
 ### SOURCE CODE ###
 SRCS = core.c tcp_stream.c config.c api.c mos_api.c eventpoll.c socket.c pipe.c \
 	   tcp_util.c eth_in.c ip_in.c tcp.c tcp_in.c eth_out.c ip_out.c tcp_out.c \
@@ -97,10 +84,6 @@ endif
 
 ifeq ($(ENABLE_PCAP), 1)
 SRCS += pcap_module.c
-endif
-
-ifeq ($(ENABLE_DPDKR), 1)
-SRCS += dpdkr_module.c
 endif
 
 ifeq ($(ENABLE_NETMAP), 1)

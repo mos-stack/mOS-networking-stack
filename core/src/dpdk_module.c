@@ -4,6 +4,8 @@
 #include "mtcp.h"
 /* for errno */
 #include <errno.h>
+/* for close/optind */
+#include <unistd.h>
 /* for logging */
 #include "debug.h"
 /* for num_devices_* */
@@ -18,8 +20,6 @@
 #include <rte_ip.h>
 #define ENABLE_STATS_IOCTL		1
 #ifdef ENABLE_STATS_IOCTL
-/* for close */
-#include <unistd.h>
 /* for open */
 #include <fcntl.h>
 /* for ioctl */

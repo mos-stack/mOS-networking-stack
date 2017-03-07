@@ -15,11 +15,6 @@ GetOutputInterface(uint32_t daddr)
 	int i;
 	int prefix = -1;
 
-#ifdef ENABLE_DPDKR
-	/* currently we assume that virtual ports are just looping back */
-	return 0;
-#endif
-
 	/* Longest prefix matching */
 	for (i = 0; i < g_config.mos->route_table->num; i++) {
 		if ((daddr & g_config.mos->route_table->ent[i]->mask)

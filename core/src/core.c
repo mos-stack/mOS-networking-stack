@@ -887,11 +887,6 @@ RunMainLoop(struct mtcp_thread_context *ctx)
 				pktbuf = mtcp->iom->get_rptr(mtcp->ctx, rx_inf, i, &len);
 				ProcessPacket(mtcp, rx_inf, i, ts, pktbuf, len);
 			}
-
-#ifdef ENABLE_DPDKR
-			mtcp->iom->send_pkts(ctx, rx_inf);
-			continue;
-#endif
 		}
 		STAT_COUNT(mtcp->runstat.rounds_rx);
 
@@ -975,10 +970,6 @@ RunMainLoop(struct mtcp_thread_context *ctx)
 			/* handle stream queues  */
 			HandleApplicationCalls(mtcp, ts);
 		}
-
-#ifdef ENABLE_DPDKR
-		continue;
-#endif
 
 #if TIME_STAT
 		gettimeofday(&handle_ts, NULL);
@@ -1667,7 +1658,7 @@ mtcp_init(const char *config_file)
 
 	if (geteuid()) {
 		TRACE_CONFIG("[CAUTION] Run as root if mlock is necessary.\n");
-#if defined(ENABLE_DPDK) || defined(ENABLE_DPDKR) || defined(ENABLE_NETMAP)
+#if defined(ENABLE_DPDK) || defined(ENABLE_NETMAP)
 		TRACE_CONFIG("[CAUTION] Run the app as root!\n");
 		exit(EXIT_FAILURE);
 #endif
@@ -1694,8 +1685,6 @@ mtcp_init(const char *config_file)
 	current_iomodule_func = &dpdk_module_func;
 #elif defined(ENABLE_PCAP)
 	current_iomodule_func = &pcap_module_func;
-#elif defined(ENABLE_DPDKR)
-	current_iomodule_func = &dpdkr_module_func;
 #elif defined(ENABLE_NETMAP)
 	current_iomodule_func = &netmap_module_func;
 #endif

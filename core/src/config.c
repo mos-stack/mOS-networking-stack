@@ -249,89 +249,6 @@ FeedNetdevConfLine(struct conf_block *blk, char *line, int len)
 	strncpy(ent->ifr.ifr_name, ent->dev_name, IFNAMSIZ-1);
 	ent->ifr.ifr_name[IFNAMSIZ-1] = '\0';
 
-#ifdef ENABLE_DPDKR
-#define DPDKR_PORT_DIR "/usr/local/var/run/openvswitch/port/"
-	char dpdkr_ip_path[MAX_PROCLINE_LEN];
-	char dpdkr_mac_path[MAX_PROCLINE_LEN];
-	char dpdkr_netmask_path[MAX_PROCLINE_LEN];
-	char dpdkr_gateway_path[MAX_PROCLINE_LEN];
-	char dpdkr_line[MAX_PROCLINE_LEN];
-	FILE* fp;
-	struct in_addr addr;
-
-	sprintf(dpdkr_ip_path, "%s%s/ip", DPDKR_PORT_DIR, ent->ifr.ifr_name);
-	sprintf(dpdkr_mac_path, "%s%s/mac", DPDKR_PORT_DIR, ent->ifr.ifr_name);
-	sprintf(dpdkr_netmask_path, "%s%s/netmask", DPDKR_PORT_DIR, ent->ifr.ifr_name);
-	sprintf(dpdkr_gateway_path, "%s%s/gateway", DPDKR_PORT_DIR, ent->ifr.ifr_name);
-
-	/* For DPDKR ports, we need to get port info from a file */
-	/* (1) ip address */
-	if ((fp = fopen(dpdkr_ip_path, "r")) == NULL ||
-		fgets(dpdkr_line, sizeof(dpdkr_line), fp) == (char *) NULL) {
-		perror(dpdkr_ip_path);
-		exit(EXIT_FAILURE);
-	}
-	if (inet_aton(dpdkr_line, &addr) == 0) {
-		TRACE_ERROR("Invalid address for port %s: %s (please check %s).\n",
-					ent->ifr.ifr_name, dpdkr_line, dpdkr_ip_path);
-		exit(EXIT_FAILURE);
-	}
-	ent->ip_addr = *(uint32_t *)&addr;
-	fclose(fp);
-
-	/* (2) mac address */
-	memset(dpdkr_line, 0, MAX_PROCLINE_LEN);
-	if ((fp = fopen(dpdkr_mac_path, "r")) == NULL ||
-		fgets(dpdkr_line, sizeof(dpdkr_line), fp) == (char *) NULL) {
-		perror(dpdkr_mac_path);
-		exit(EXIT_FAILURE);
-	}
-	if (sscanf(dpdkr_line, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-			   &ent->haddr[0], &ent->haddr[1], &ent->haddr[2],
-			   &ent->haddr[3], &ent->haddr[4], &ent->haddr[5]) != 6) {
-		TRACE_ERROR("Invalid address for port %s: %s (please check %s).\n",
-					ent->ifr.ifr_name, dpdkr_line, dpdkr_mac_path);
-		exit(EXIT_FAILURE);
-	}	
-	fclose(fp);
-
-	/* (3) netmask */
-	memset(dpdkr_line, 0, MAX_PROCLINE_LEN);
-	if ((fp = fopen(dpdkr_netmask_path, "r")) == NULL ||
-		fgets(dpdkr_line, sizeof(dpdkr_line), fp) == (char *) NULL) {
-		perror(dpdkr_netmask_path);
-		exit(EXIT_FAILURE);
-	}
-	if (inet_aton(dpdkr_line, &addr) == 0) {
-		TRACE_ERROR("Invalid address for port %s: %s (please check %s).\n",
-					ent->ifr.ifr_name, dpdkr_line, dpdkr_netmask_path);
-		exit(EXIT_FAILURE);
-	}
-	ent->netmask = *(uint32_t *)&addr;
-	fclose(fp);
-
-	/* (4) default gateway */
-	memset(dpdkr_line, 0, MAX_PROCLINE_LEN);
-	if ((fp = fopen(dpdkr_gateway_path, "r")) == NULL ||
-		fgets(dpdkr_line, sizeof(dpdkr_line), fp) == (char *) NULL) {
-		perror(dpdkr_gateway_path);
-		exit(EXIT_FAILURE);
-	}
-	if (inet_aton(dpdkr_line, &addr) == 0) {
-		TRACE_ERROR("Invalid address for port %s: %s (please check %s).\n",
-					ent->ifr.ifr_name, dpdkr_line, dpdkr_gateway_path);
-		exit(EXIT_FAILURE);
-	}
-	ent->gateway = *(uint32_t *)&addr;
-	fclose(fp);
-
-	ent->ifindex = -1;
-	TAILQ_INSERT_TAIL(&conf->list, ent, link);
-	conf->ent[conf->num] = ent;
-	conf->num++;
-	return;
-#endif
-
 	/* Create socket */
 	int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
 	if (sock == -1) {
@@ -993,7 +910,7 @@ __error:
 static char *
 ReadConf(const char *fname)
 {
-	size_t hav_read = 0, rc;
+	ssize_t hav_read = 0, rc;
 	FILE *fp = fopen(fname, "r");
 	if (fp == NULL) {
 		TRACE_ERROR("Cannot open the config file %s\n", fname);

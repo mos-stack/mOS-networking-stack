@@ -86,7 +86,6 @@ typedef struct {
 #define MAX_DEVICES     16
 /* IO-MODULE string literals */
 #define DPDK_STR		"dpdk"
-#define DPDKR_STR		"dpdkr"
 #define PCAP_STR		"pcap"
 #define NETMAP_STR		"netmap"
 /* dev_ioctl related macros */
@@ -101,10 +100,6 @@ typedef struct {
 /* registered dpdk context */
 extern io_module_func dpdk_module_func;
 #endif /* !ENABLE_DPDK */
-
-#ifdef ENABLE_DPDKR
-extern io_module_func dpdkr_module_func;
-#endif
 
 #ifdef ENABLE_PCAP
 extern io_module_func pcap_module_func;

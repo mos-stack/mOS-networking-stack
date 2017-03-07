@@ -647,7 +647,7 @@ mtcp_socket(mctx_t mctx, int domain, int type, int protocol)
 		return -1;
 	}
 
-	if (type == SOCK_STREAM) {
+	if (type == (int)SOCK_STREAM) {
 		type = MOS_SOCK_STREAM;
 	} else if (type == MOS_SOCK_MONITOR_STREAM ||
 		   type == MOS_SOCK_MONITOR_RAW) {
