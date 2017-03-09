@@ -55,63 +55,6 @@ posix_seq_srand(unsigned seed) {
 	next = seed % 32768;
 }
 /*---------------------------------------------------------------------------*/
-uint32_t
-FetchSeqDrift(struct tcp_stream *stream, uint32_t seq)
-{
-	int i = 0;
-	uint8_t flag = 1;
-	int count;
-
-	i = stream->sndvar->sre_index - 1;
-	if (i == -1) i = SRE_MAX - 1;
-	count = 0;
-
-	while (flag) {
-		if (stream->sndvar->sre[i].seq_base == 0)
-			return 0;
-		else if (seq >= stream->sndvar->sre[i].seq_base)
-			return stream->sndvar->sre[i].seq_off;
-		
-		i--;
-		if (i == -1) i = SRE_MAX - 1;
-		count++;
-		if (count == SRE_MAX)
-			flag = 1;
-	}
-
-	return 0;
-}
-/*---------------------------------------------------------------------------*/
-int
-TcpSeqChange(socket_map_t socket, uint32_t seq_drift, int side, uint32_t seqno)
-{
-	struct tcp_stream *mstrm, *stream;
-
-	if (side != MOS_SIDE_CLI && side != MOS_SIDE_SVR) {
-		TRACE_ERROR("Invalid side requested!\n");
-		errno = EINVAL;
-		return -1;
-	}
-	
-	mstrm = socket->monitor_stream->stream;
-	stream = (side == mstrm->side) ? mstrm : mstrm->pair_stream;
-	if (stream == NULL) {
-		TRACE_ERROR("Stream pointer for sockid: %u not found!\n",
-			    socket->id);
-		errno = EBADF;
-		return -1;
-	}
-
-	stream->sndvar->sre[stream->sndvar->sre_index].seq_off = seq_drift;
-	stream->sndvar->sre[stream->sndvar->sre_index].seq_off +=
-		(stream->sndvar->sre_index == 0) ? stream->sndvar->sre[SRE_MAX - 1].seq_off :
-		stream->sndvar->sre[stream->sndvar->sre_index - 1].seq_off;
-	stream->sndvar->sre[stream->sndvar->sre_index].seq_base = seqno;
-	stream->sndvar->sre_index = (stream->sndvar->sre_index + 1) & (SRE_MAX - 1);
-
-	return 0;
-} 
-/*---------------------------------------------------------------------------*/
 /**
  * FYI: This is NOT a read-only return!
  */

@@ -192,23 +192,27 @@ mtcp_pipe(mctx_t mctx, int pipeid[2]);
 /** Get socket options
  *
  * <ol>
- *
- * <li> MOS_TCP_STATE_CLI and MOS_TCP_STATE_SVR \n
- * Returns a TCP state variable. This socket option is read-only. </li>
- *
- * <li> MOS_INFO_CLIBUF and MOS_INFO_SVRBUF \n
- * Returns a structured information for upstream and downstream
- * TCP buffer. The argument is a `tcp_buf_info` structure. This socket
- * option is read-only. </li>
+ * 
+ * <li> Please see http://mos.kaist.edu/man/mtcp_getsockopt.html for
+ * the further informations. </li>
  *
  * <li> MOS_FRAGINFO_CLIBUF and MOS_FRAGINFO_SVRBUF \n
- * Returns a TCP fragment buffer list information of TCP ring buffer.
- * The argument is an array of `tcp_ring_fragment` structure, including
- * the first contiguous data in the ring buffer. If there is no data in the
- * TCP ring buffer, optval will be NULL. This socket option is read-only.
- * For this option, note that optval represents the number of object entries
- * that are allocated to read (input) and have been read (output). </li>
+ * Gives back offsets to fragments (non-contiguous data segments) currently
+ * stored in client’s TCP ring buffer. The optval is an array of
+ * `struct tcp_ring_fragment`
+ * where offset flow data starting from client’s TCP SYN sequence number,
+ * and len is the length of the tcp_ring_fragment. The optval holds the size
+ * of the array (in terms of the number of elements). </li>
  *
+ * <li> MOS_INFO_CLIBUF and MOS_INFO_SVRBUF \n
+ * Returns meta-data regarding the client’s TCP ring buffer. This information
+ * is returned in the form of optval which is passed as struct tcp_buf_info. </li>
+ *
+ * <li> MOS_TCP_STATE_CLI and MOS_TCP_STATE_SVR \n
+ * Returns the current emulated state of the client. The optval argument is
+ * a pointer to an int whereas the optlen argument contains the sizeof(int).
+ * The optval returns a value of type enum tcpstate which can carry any one
+ * of the following states. </li>
  * </ol>
  *
  * @param [in] mctx: mtcp context
@@ -228,16 +232,24 @@ mtcp_getsockopt(mctx_t mctx, int sock, int level,
  * <ol>
  *
  * <li> MOS_CLIBUF and MOS_SVRBUF \n
- * Resize tcp ring buffer. Putting 0 disables tcp ring buffer.
- * Takes integer as argument. </li>
+ * Dynamically adjust the size of the TCP receive ring buffer of the
+ * emulated client/server stack. The optval contains the size of the buffer
+ * that needs to be set as int, while optlen is equal to sizeof(int). </li>
  * 
- * <li> MOS_FRAG_CLIBUF and MOS_FRAG_SVRBUF \n
- * This version is `suppressed' at the moment (works but not advertised
- * for the sake of simplicity). Sets the metadata tracking range to the
- * specified value. </li>
+ * <li> MOS_CLIOVERLAP and MOS_SVROVERLAP \n
+ * Dynamically determine the policy on content overlap (e.g., overwriting
+ * with the retransmitted payload or not) for the client-side buffer. The
+ * optval can be either MOS_OVERLAP_POLICY_FIRST (to take the first data
+ * and never overwrite the buffer) or MOS_OVERLAP_POLICY_LAST (to always
+ * update the buffer with the last data), and optlen is equal to sizeof(int). </li>
  *
  * <li> MOS_STOP_MON \n
- * Stop the monitoring for the specific side (passed via optval) </li>
+ * Dynamically stop monitoring a flow for the specific side. This option can
+ * be used only with a MOS_SOCK_MONITOR_ACTIVE socket, which is given as a
+ * parameter in callback functions for every flow. The optval contains a side
+ * variable (MOS_SIDE_CLI, MOS_SIDE_SVR, or MOS_SIDE_BOTH), while optlen is
+ * equal to sizeof(int). </li>
+ *
  * </ol>
  *
  * @param [in] mctx: mtcp context

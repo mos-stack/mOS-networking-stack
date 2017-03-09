@@ -340,12 +340,6 @@ DisableBuf(socket_map_t sock, int side);
 int
 GetLastTimestamp(struct tcp_stream *stream, uint32_t *usecs, socklen_t *sz);
 
-int
-TcpSeqChange(socket_map_t socket, uint32_t seq_drift, int side, uint32_t seqno);
-
-uint32_t
-FetchSeqDrift(struct tcp_stream *stream, uint32_t seqno);
-
 void
 posix_seq_srand(unsigned seed);
 

@@ -703,8 +703,11 @@ mtcp_cb_stop(mctx_t mctx, int sock, int side)
 	RemoveMonitorEvents(mtcp, socket, side);
 
 	/* passive monitoring socket is not connected to any stream */
-	if (socket->socktype == MOS_SOCK_MONITOR_STREAM)
-		return 0;
+	if (socket->socktype == MOS_SOCK_MONITOR_STREAM) {
+	  /* it should return an EPERM error instead of quitting silently */
+	  errno = EPERM;
+	  return -1;
+	}
 	
 	if (side == MOS_SIDE_CLI) {
 		/* see if the associated stream requires monitoring any more */

@@ -194,36 +194,7 @@ typedef struct filter_arg {
 /**
  * MOS monitor socket option names (and values)
  * This will contain options pertaining to monitor stream sockets
- *
- * MOS_FRAGINFO_CLIBUF	: Gives back offsets to fragments of buffers 
- * (optname)		      currently stored in client's TCP ring buffer.
- *          			  (getsockopt)
- * 
- * MOS_FRAGINFO_SVRBUF	: Gives back offsets to fragments of buffers 
- * (optname)		      currently stored in server's TCP ring buffer.
- *			             (getsockopt)
- *
- * MOS_INFO_CLIBUF	: Gives back tcp info for client-side ring buffer.
- * (optname)		  (getsockopt)
- *
- * MOS_INFO_SVRBUF	: Gives back tcp info for server-side ring buffer.
- * (optname)		  (getsockopt)
- *
- * MOS_TCP_STATE_CLI	: Retrieves current TCP state for client side
- * (optname)		  (getsockopt)
- *
- * MOS_TCP_STATE_SVR	: Retrieves current TCP state for server side
- * (optname)		  (getsockopt)
- *
- * MOS_TIMESTAMP	: Retrieves timestamp of last packet seen for
- * (optname)		  given flow. (in usecs)
- *			  (getsockopt)
- *
- * MOS_SEQ_REMAP	: Changes the sequence number change
- * (optname)		  (setsockopt)
- *
- * MOS_STOP_MON		: Stop monitoring
- * (optname)		  (setsockopt)
+ * See mtcp_getsockopt() and mtcp_setsockopt() the mtcp_api.h file.
  */
 enum mos_socket_opts {
 	MOS_FRAGINFO_CLIBUF	= 0x01,
@@ -232,27 +203,24 @@ enum mos_socket_opts {
 	MOS_INFO_SVRBUF		= 0x04,
 	MOS_TCP_STATE_CLI	= 0x05,
 	MOS_TCP_STATE_SVR	= 0x06,
-	MOS_TIMESTAMP		= 0x07,
-	MOS_MONLEVEL		= 0x08,
 	MOS_CLIBUF  		= 0x09,
 	MOS_SVRBUF  		= 0x0a,
-	MOS_SEQ_REMAP		= 0x0b,
 	MOS_STOP_MON		= 0x0c,
-	MOS_FRAG_CLIBUF   	= 0x0d,
-	MOS_FRAG_SVRBUF   	= 0x0e,
 	MOS_CLIOVERLAP		= 0x0f,
 	MOS_SVROVERLAP		= 0x10,
-#ifdef OLD_API
-	MOS_NO_CLIBUF		= 0x0f,
-	MOS_NO_SVRBUF		= 0x10,
-#endif
+
+	MOS_TIMESTAMP		= 0x07, /* supressed (not used) */
+	MOS_SEQ_REMAP		= 0x0b, /* supressed (not used) */
+	MOS_FRAG_CLIBUF   	= 0x0d, /* supressed (not used) */
+	MOS_FRAG_SVRBUF   	= 0x0e, /* supressed (not used) */
+
 };
 
 /**
  * MOS tcp buf info structure.
  * Used by the monitor application to retreive
  * tcp_stream-related info. Usually called via
- * getsockopt() function
+ * mtcp_getsockopt() function
  */
 struct tcp_buf_info {
 	/** The initial TCP sequence number of TCP ring buffer. */

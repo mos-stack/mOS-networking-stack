@@ -445,19 +445,8 @@ mtcp_setsockopt(mctx_t mctx, int sockid, int level,
 			else
 				return -1;
 #endif
-		case MOS_MONLEVEL:
-#ifdef OLD_API
-			assert(*(int *)optval == MOS_NO_CLIBUF || 
-			       *(int *)optval == MOS_NO_SVRBUF);
-			return DisableBuf(socket, 
-					  (*(int *)optval == MOS_NO_CLIBUF) ? 
-					  MOS_SIDE_CLI : MOS_SIDE_SVR);
-#endif
 		case MOS_SEQ_REMAP:
-			return TcpSeqChange(socket, 
-					    (uint32_t)((seq_remap_info *)optval)->seq_off, 
-					    ((seq_remap_info *)optval)->side,
-					    mtcp->pctx->p.seq);
+			break;
 		case MOS_STOP_MON:
 			return mtcp_cb_stop(mctx, sockid, *(int *)optval);
 		default: 

@@ -1167,50 +1167,6 @@ PostSendTCPAction(mtcp_manager_t mtcp, struct pkt_ctx *pctx,
 		  struct tcp_stream *recvside_stream, 
 		  struct tcp_stream *sendside_stream)
 {
-	uint32_t snd_seq_drift, rcv_seq_drift;
-
-	snd_seq_drift = FetchSeqDrift(sendside_stream, pctx->p.seq);
-	rcv_seq_drift = FetchSeqDrift(recvside_stream, pctx->p.ack_seq);
-
-	if (snd_seq_drift != 0 || rcv_seq_drift != 0) {
-		pctx->p.tcph->seq = htonl(pctx->p.seq + 
-					  snd_seq_drift);
-		pctx->p.tcph->ack_seq = htonl(pctx->p.ack_seq -
-					      rcv_seq_drift);
-		pctx->p.seq += snd_seq_drift;
-		pctx->p.ack_seq -= rcv_seq_drift;
-
-		/* Recompute checksums */
-		pctx->p.iph->check = 0;
-		pctx->p.iph->check = ip_fast_csum(pctx->p.iph, pctx->p.iph->ihl);
-		
-		pctx->p.tcph->check = 0;
-		pctx->p.tcph->check = TCPCalcChecksum((uint16_t *)pctx->p.tcph,
-			ntohs(pctx->p.iph->tot_len) - (pctx->p.iph->ihl<<2),
-			pctx->p.iph->saddr, pctx->p.iph->daddr);
-	}
-#if 0
-	/* This block of code will go away in future revisions */
-	/* update sequence no. if seq_drift > 0 */
-	if (sendside_stream->sndvar->seq_drift != 0 ||
-	    recvside_stream->sndvar->seq_drift != 0) {
-		
-		pctx->p.tcph->seq = htonl(pctx->p.seq + 
-					  sendside_stream->sndvar->seq_drift);
-		pctx->p.tcph->ack_seq = htonl(pctx->p.ack_seq -
-					      recvside_stream->sndvar->seq_drift);
-		pctx->p.seq += sendside_stream->sndvar->seq_drift;
-		pctx->p.ack_seq -= recvside_stream->sndvar->seq_drift;
-
-		/* Recompute checksums */
-		pctx->p.iph->check = 0;
-		pctx->p.iph->check = ip_fast_csum(pctx->p.iph, pctx->p.iph->ihl);
-		
-		pctx->p.tcph->check = 0;
-		pctx->p.tcph->check = TCPCalcChecksum((uint16_t *)pctx->p.tcph,
-			ntohs(pctx->p.iph->tot_len) - (pctx->p.iph->ihl<<2),
-			pctx->p.iph->saddr, pctx->p.iph->daddr);
-	}	
-#endif
+	/* this is empty for the time being */
 }
 /*----------------------------------------------------------------------------*/
