@@ -941,10 +941,43 @@ mtcp_register_callback(mctx_t mctx, int sockid, event_t event,
 {
 	socket_map_t socket;
 	stree_t **pstree;
-	
+	event_t root_event = event;
+	tree_node_t *ev_node;
+
+	/* (1) check if event variable is NULL
+	 * (2) any event within the built-in event range should be 2^N
+	 */
 	if (event == MOS_NULL_EVENT ||
 	    (event < (1L << NUM_BEV) && !POWER_OF_TWO(event)))
 		return -1;
+
+	/* for UDEs, retrieve the root built-in event */	
+	if (root_event >= (1L << NUM_BEV)) {
+		if ((ev_node = dforest_search(event)) == NULL)
+			return -1;
+		root_event = (ev_node)->link.tn_parent->ev;
+		/* the root built-in event should not be NULL */
+		if (root_event == MOS_NULL_EVENT)
+			return -1;
+	}
+
+	/* check if there is any invalid event-hook mapping */
+	if (hook_point == MOS_NULL) {
+		if (root_event & (MOS_ON_CONN_START | MOS_ON_REXMIT |
+					 MOS_ON_TCP_STATE_CHANGE | MOS_ON_CONN_END)) {
+			errno = EINVAL;
+			return -1;
+		}
+	} else if (hook_point == MOS_HK_RCV || hook_point == MOS_HK_SND) {
+		if (root_event & (MOS_ON_CONN_NEW_DATA | MOS_ON_ORPHAN | MOS_ON_ERROR)) {
+			errno = EINVAL;
+			return -1;
+		}
+	} else {
+		/* invalid hook point */
+		errno = EINVAL;
+		return -1;
+	}
 	
 	mtcp_manager_t mtcp = GetMTCPManager(mctx);
 	if (!mtcp)
