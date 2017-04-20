@@ -1305,8 +1305,11 @@ UpdateRecvTCPContext(mtcp_manager_t mtcp, struct tcp_stream *cur_stream,
 		/* SYN retransmit implies our SYN/ACK was lost. Resend */
 		if (tcph->syn && pctx->p.seq == cur_stream->rcvvar->irs)
 			Handle_TCP_ST_LISTEN(mtcp, cur_stream, pctx);
-		else
+		else {
 			Handle_TCP_ST_SYN_RCVD(mtcp, cur_stream, pctx);
+			if (pctx->p.payloadlen > 0 && cur_stream->state == TCP_ST_ESTABLISHED)
+				Handle_TCP_ST_ESTABLISHED(mtcp, cur_stream, pctx);
+		}
 		break;
 
 	case TCP_ST_ESTABLISHED:

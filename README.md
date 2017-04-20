@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/ndsl-kaist/mOS-networking-stack.svg?branch=master)](https://travis-ci.org/ndsl-kaist/mOS-networking-stack)
+[![Build Status](https://scan.coverity.com/projects/11918/badge.svg)](https://scan.coverity.com/projects/mos-networking-stack)
 
 # mOS-networking-stack
 

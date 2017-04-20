@@ -377,11 +377,13 @@ SendTCPPacket(struct mtcp_manager *mtcp, tcp_stream *cur_stream,
 		struct tcp_stream *recvside_stream = cur_stream->pair_stream;
 		struct tcp_stream *sendside_stream = cur_stream;
 
-		if (recvside_stream->rcvvar && recvside_stream->rcvvar->rcvbuf)
-			pctx.p.offset = (uint64_t)seq2loff(recvside_stream->rcvvar->rcvbuf,
-					pctx.p.seq, recvside_stream->rcvvar->irs + 1);
-
-		UpdateMonitor(mtcp, sendside_stream, recvside_stream, &pctx, false);
+		if (recvside_stream) {
+			if (recvside_stream->rcvvar && recvside_stream->rcvvar->rcvbuf)
+				pctx.p.offset = (uint64_t)seq2loff(recvside_stream->rcvvar->rcvbuf,
+								   pctx.p.seq, recvside_stream->rcvvar->irs + 1);
+			
+			UpdateMonitor(mtcp, sendside_stream, recvside_stream, &pctx, false);
+		}
 	}
 
 #ifdef PKTDUMP
