@@ -21,7 +21,7 @@
 #include "pipe.h"
 #include "fhash.h"
 #include "addr_pool.h"
-#include "rss.h"
+#include "util.h"
 #include "config.h"
 #include "debug.h"
 #include "eventpoll.h"

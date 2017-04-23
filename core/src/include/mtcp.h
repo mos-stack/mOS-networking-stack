@@ -206,7 +206,7 @@ struct mtcp_manager
 
 	//mem_pool_t socket_pool;
 	sb_manager_t rbm_snd;
-	rb_manager_t rbm_rcv;
+
 	struct hashtable *tcp_flow_table;
 
 	uint32_t s_index;		/* stream index */
