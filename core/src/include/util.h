@@ -5,6 +5,7 @@
 
 /* sip, dip, sp, dp: in network byte order */
 int GetRSSCPUCore(in_addr_t sip, in_addr_t dip, 
-		  in_port_t sp, in_port_t dp, int num_queues);
+		  in_port_t sp, in_port_t dp, int num_queues,
+		  int endian_type);
 
 #endif /* __UTIL_H_ */

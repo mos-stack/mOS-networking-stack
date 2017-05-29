@@ -103,16 +103,18 @@ GetRSSHash(in_addr_t sip, in_addr_t dip, in_port_t sp, in_port_t dp)
 /*-------------------------------------------------------------------*/
 int
 GetRSSCPUCore(in_addr_t sip, in_addr_t dip, 
-			  in_port_t sp, in_port_t dp, int num_queues)
+	      in_port_t sp, in_port_t dp, int num_queues,
+	      int endian_type)
 {
 	#define RSS_BIT_MASK 0x0000007F
 
 	uint32_t masked = GetRSSHash(sip, dip, sp, dp) & RSS_BIT_MASK;
 
-#ifdef ENABLE_NETMAP
-	static const uint32_t off[4] = {3, 1, -1, -3};
-	masked += off[masked & 0x3];
-#endif
+	if (endian_type) {
+		static const uint32_t off[4] = {3, 1, -1, -3};
+		masked += off[masked & 0x3];
+	}
+
 	return (masked % num_queues);
 
 }
@@ -123,6 +125,7 @@ mystrtol(const char *nptr, int base)
 	int rval;
 	char *endptr;
 
+	errno = 0;
 	rval = strtol(nptr, &endptr, 10);
 	/* check for strtol errors */
 	if ((errno == ERANGE && (rval == LONG_MAX ||

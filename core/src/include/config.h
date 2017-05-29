@@ -210,5 +210,9 @@ FreeConfigResources();
 
 int
 mystrtol(const char *nptr, int base);
+
+/* retrive device-specific endian type */
+int
+FetchEndianType();
 /*----------------------------------------------------------------------------*/
 #endif /* __CONFIG_H_ */

@@ -1239,3 +1239,20 @@ FreeConfigResources()
 	}
 }
 /*----------------------------------------------------------------------------*/
+int
+FetchEndianType()
+{
+	char *argv;
+	char **argp = &argv;
+	if (current_iomodule_func == &dpdk_module_func) {
+		/* dpdk_module_func logic down below */
+		dpdk_module_func.dev_ioctl(NULL, 0, DRV_NAME, (void *)argp);
+		if (!strcmp(*argp, "net_i40e"))
+			return 1;
+		
+		return 0;
+	}
+	
+	return 1;
+}
+/*----------------------------------------------------------------------------*/

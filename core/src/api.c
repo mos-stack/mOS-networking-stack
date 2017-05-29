@@ -988,7 +988,7 @@ mtcp_connect(mctx_t mctx, int sockid,
 	in_addr_t dip;
 	in_port_t dport;
 	int is_dyn_bound = FALSE;
-	int ret, nif;
+	int ret, nif, endian_check;
 	int cnt_match = 0;
 	struct mon_listener *walk;
 	struct sfbpf_program fcode;
@@ -1051,9 +1051,11 @@ mtcp_connect(mctx_t mctx, int sockid,
 	    socket->saddr.sin_port != INPORT_ANY &&
 	    socket->saddr.sin_addr.s_addr != INADDR_ANY) {
 		int rss_core;
-	
+
+		endian_check = FetchEndianType();
 		rss_core = GetRSSCPUCore(socket->saddr.sin_addr.s_addr, dip, 
-				socket->saddr.sin_port, dport, num_queues);
+					 socket->saddr.sin_port, dport, num_queues,
+					 endian_check);
 
 		if (rss_core != mctx->cpu) {
 			errno = EINVAL;

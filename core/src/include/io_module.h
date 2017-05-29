@@ -92,6 +92,7 @@ typedef struct {
 #define PKT_TX_IP_CSUM		0x01
 #define PKT_TX_TCP_CSUM		0x02
 #define PKT_RX_RSS		0x03
+#define DRV_NAME		0x08
 
 /* enable shared RX/TX buffers */
 //#define SHARE_IO_BUFFER

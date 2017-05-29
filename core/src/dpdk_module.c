@@ -77,6 +77,8 @@ static uint8_t cpu_qid_map[RTE_MAX_ETHPORTS][MAX_CPUS] = {{0}};
 static struct ether_addr ports_eth_addr[RTE_MAX_ETHPORTS];
 #endif
 
+static struct rte_eth_dev_info dev_info[RTE_MAX_ETHPORTS];
+
 static struct rte_eth_conf port_conf = {
 	.rxmode = {
 		.mq_mode	= 	ETH_MQ_RX_RSS,
@@ -521,7 +523,13 @@ dpdk_dev_ioctl(struct mtcp_thread_context *ctx, int nif, int cmd, void *argp)
 	struct iphdr *iph;
 	struct tcphdr *tcph;
 	RssInfo *rss_i;
+	void **argpptr = (void **)argp;
 
+	if (cmd == DRV_NAME) {
+		*argpptr = (void *)dev_info->driver_name;
+		return 0;
+	}
+	
 	iph = (struct iphdr *)argp;
 	dpc = (struct dpdk_private_context *)ctx->io_private_context;
 	len_of_mbuf = dpc->wmbufs[nif].len;
@@ -621,7 +629,9 @@ dpdk_load_module_lower_half(void)
 		0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
 		0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
 		0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
-		0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05
+		0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
+		0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
+		0x05, 0x05
 	};
 
 	port_conf.rx_adv_conf.rss_conf.rss_key = (uint8_t *)&key;
@@ -677,6 +687,9 @@ dpdk_load_module_lower_half(void)
 #ifdef DEBUG
 			rte_eth_macaddr_get(portid, &ports_eth_addr[portid]);
 #endif
+			/* check port capabilities */
+			rte_eth_dev_info_get(portid, &dev_info[portid]);
+
 			queue_id = 0;
 			for (rxlcore_id = 0; rxlcore_id < g_config.mos->num_cores; rxlcore_id++) {
 				if (!(g_config.mos->netdev_table->ent[eth_idx]->cpu_mask & (1L << rxlcore_id)))
