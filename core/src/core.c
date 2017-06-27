@@ -79,6 +79,7 @@ static int printer = -1;
 #endif /* ROUND_STAT */
 #endif /* NETSTAT_TOTAL */
 #endif /* NETSTAT */
+void mtcp_free_context(mctx_t mctx);
 /*----------------------------------------------------------------------------*/
 void
 HandleSignal(int signal)
@@ -1331,20 +1332,16 @@ MTCPRunThread(void *arg)
 	
 	TRACE_DBG("MTCP thread %d finished.\n", ctx->cpu);
 	
+	struct mtcp_context m;
+	m.cpu = cpu;
+	mtcp_free_context(&m);
+
 	/* signaling mTCP thread is done */
 	sem_post(&g_done_sem[mctx->cpu]);
 	
 	//pthread_exit(NULL);
 	return 0;
 }
-/*----------------------------------------------------------------------------*/
-#ifdef ENABLE_DPDK
-static int MTCPDPDKRunThread(void *arg)
-{
-	MTCPRunThread(arg);
-	return 0;
-}
-#endif /* !ENABLE_DPDK */
 /*----------------------------------------------------------------------------*/
 mctx_t 
 mtcp_create_context(int cpu)
@@ -1401,31 +1398,12 @@ mtcp_create_context(int cpu)
 		TRACE_ERROR("Failed to create log thread\n");
 		return NULL;
 	}
-
-#ifdef ENABLE_DPDK	
-	/* Wake up mTCP threads (wake up I/O threads) */
-	if (current_iomodule_func == &dpdk_module_func) {
-		int master;
-		master = rte_get_master_lcore();
-		if (master == cpu) {
-			lcore_config[master].ret = 0;
-			lcore_config[master].state = FINISHED;
-			if (pthread_create(&g_thread[cpu], 
-					   NULL, MTCPRunThread, (void *)mctx) != 0) {
-				TRACE_ERROR("pthread_create of mtcp thread failed!\n");
-				return NULL;
-			}
-		} else
-			rte_eal_remote_launch(MTCPDPDKRunThread, mctx, cpu);
-	} else 
-#endif /* !ENABLE_DPDK */
-		{
-			if (pthread_create(&g_thread[cpu], 
-					   NULL, MTCPRunThread, (void *)mctx) != 0) {
-				TRACE_ERROR("pthread_create of mtcp thread failed!\n");
-				return NULL;
-			}
-		}
+	
+	if (pthread_create(&g_thread[cpu], 
+			   NULL, MTCPRunThread, (void *)mctx) != 0) {
+		TRACE_ERROR("pthread_create of mtcp thread failed!\n");
+		return NULL;
+	}
 	
 	sem_wait(&g_init_sem[cpu]);
 	sem_destroy(&g_init_sem[cpu]);
@@ -1444,19 +1422,31 @@ mtcp_create_context(int cpu)
 	return mctx;
 }
 /*----------------------------------------------------------------------------*/
+int
+mtcp_destroy_context(mctx_t mctx)
+{
+	struct mtcp_thread_context *ctx = g_pctx[mctx->cpu];
+	if (ctx != NULL)
+		ctx->done = 1;
+	free(mctx);
+
+	return 0;
+}
+/*----------------------------------------------------------------------------*/
 /**
  * TODO: It currently always returns 0. Add appropriate error return values
  */
-int 
-mtcp_destroy_context(mctx_t mctx)
+void
+mtcp_free_context(mctx_t mctx)
 {
 	struct mtcp_thread_context *ctx = g_pctx[mctx->cpu];
 	struct mtcp_manager *mtcp = ctx->mtcp_manager;
 	struct log_thread_context *log_ctx = mtcp->logger;
 	int ret, i;
 
-	TRACE_DBG("CPU %d: mtcp_destroy_context()\n", mctx->cpu);
+	TRACE_DBG("CPU %d: mtcp_free_context()\n", mctx->cpu);
 
+	if (g_pctx[mctx->cpu] == NULL) return;
 	/* close all stream sockets that are still open */
 	if (!ctx->exit) {
 		for (i = 0; i < g_config.mos->max_concurrency; i++) {
@@ -1474,20 +1464,8 @@ mtcp_destroy_context(mctx_t mctx)
 	ctx->done = 1;
 
 	//pthread_kill(g_thread[mctx->cpu], SIGINT);
-#ifdef ENABLE_DPDK
 	ctx->exit = 1;
-	/* XXX - dpdk logic changes */
-	if (current_iomodule_func == &dpdk_module_func) {
-		int master = rte_get_master_lcore();
-		if (master == mctx->cpu)
-			pthread_join(g_thread[mctx->cpu], NULL);
-		else
-			rte_eal_wait_lcore(mctx->cpu);
-	} else 
-#endif /* !ENABLE_DPDK */
-		{
-			pthread_join(g_thread[mctx->cpu], NULL);
-		}
+	pthread_join(g_thread[mctx->cpu], NULL);
 	
 	TRACE_INFO("MTCP thread %d joined.\n", mctx->cpu);
 	running[mctx->cpu] = FALSE;
@@ -1558,6 +1536,7 @@ mtcp_destroy_context(mctx_t mctx)
 	
 	if (mtcp->ap) {
 		DestroyAddressPool(mtcp->ap);
+		mtcp->ap = NULL;
 	}
 
 	SQ_LOCK_DESTROY(&ctx->connect_lock);
@@ -1570,10 +1549,13 @@ mtcp_destroy_context(mctx_t mctx)
 	//TRACE_INFO("MTCP thread %d destroyed.\n", mctx->cpu);
 	if (mtcp->iom->destroy_handle)
 		mtcp->iom->destroy_handle(ctx);
-	free(ctx);
-	free(mctx);
 
-	return 0;
+	if (g_logctx[mctx->cpu]) {
+		free(g_logctx[mctx->cpu]);
+		g_logctx[mctx->cpu] = NULL;
+	}
+	free(ctx);
+	g_pctx[mctx->cpu] = NULL;
 }
 /*----------------------------------------------------------------------------*/
 mtcp_sighandler_t 

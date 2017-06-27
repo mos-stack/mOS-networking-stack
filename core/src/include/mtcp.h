@@ -43,7 +43,9 @@
 #define DBG_BUF_LEN 2048
 #endif
 
+#ifndef MAX_CPUS
 #define MAX_CPUS 16
+#endif
 
 /*
  * Ethernet frame overhead

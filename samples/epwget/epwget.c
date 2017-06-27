@@ -127,8 +127,8 @@ struct wget_vars
 	int fd;
 };
 /*----------------------------------------------------------------------------*/
-static struct thread_context *g_ctx[MAX_CPUS];
-static struct wget_stat *g_stat[MAX_CPUS];
+static struct thread_context *g_ctx[MAX_CPUS] = {0};
+static struct wget_stat *g_stat[MAX_CPUS] = {0};
 /*----------------------------------------------------------------------------*/
 static thread_context_t 
 CreateContext(mctx_t mctx)
@@ -153,6 +153,7 @@ CreateContext(mctx_t mctx)
 static void 
 DestroyContext(thread_context_t ctx) 
 {
+	g_stat[ctx->core] = NULL;
 	free(ctx);
 }
 /*----------------------------------------------------------------------------*/

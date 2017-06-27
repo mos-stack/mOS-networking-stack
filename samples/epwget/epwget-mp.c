@@ -126,8 +126,8 @@ struct wget_vars
 	int fd;
 };
 /*----------------------------------------------------------------------------*/
-static struct thread_context *g_ctx[MAX_CPUS];
-static struct wget_stat *g_stat[MAX_CPUS];
+static struct thread_context *g_ctx[MAX_CPUS] = {0};
+static struct wget_stat *g_stat[MAX_CPUS] = {0};
 /*----------------------------------------------------------------------------*/
 static thread_context_t 
 CreateContext(mctx_t mctx)
@@ -152,6 +152,7 @@ CreateContext(mctx_t mctx)
 static void 
 DestroyContext(thread_context_t ctx) 
 {
+	g_stat[ctx->core] = NULL;
 	free(ctx);
 }
 /*----------------------------------------------------------------------------*/
@@ -345,9 +346,9 @@ HandleReadEvent(thread_context_t ctx, int sockid, struct wget_vars *wv)
 						wv->file_len, wv->file_len / 1024 / 1024);
 				wv->headerset = TRUE;
 				wv->recv += (rd - (wv->resp_len - wv->header_len));
+				rd = (wv->resp_len - wv->header_len);
 				
 				pbuf += (rd - (wv->resp_len - wv->header_len));
-				rd = (wv->resp_len - wv->header_len);
 
 			} else {
 				/* failed to parse response header */

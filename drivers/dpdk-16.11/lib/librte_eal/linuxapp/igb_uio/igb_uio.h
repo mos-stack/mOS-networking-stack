@@ -127,7 +127,7 @@ static struct pci_device_id e1000_pci_tbl[] = {
 };
 /*----------------------------------------------------------------------------*/
 /* list of 10 Gbps controllers */
-static DEFINE_PCI_DEVICE_TABLE(ixgbe_pci_tbl) = {
+static struct pci_device_id ixgbe_pci_tbl[] = {
 	{PCI_VDEVICE(INTEL, IXGBE_DEV_ID_82598)},
 	{PCI_VDEVICE(INTEL, IXGBE_DEV_ID_82598_BX)},
 	{PCI_VDEVICE(INTEL, IXGBE_DEV_ID_82598AF_DUAL_PORT)},
@@ -233,7 +233,7 @@ struct stats_struct {
 	uint8_t dev;
 };
 /* max qid */
-#define MAX_QID			16
+#define MAX_QID			128
 #define MAX_DEVICES		16
 /* ioctl# */
 #define SEND_STATS		 0
