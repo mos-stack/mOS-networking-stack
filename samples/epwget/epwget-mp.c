@@ -30,6 +30,7 @@ static struct conf_var g_conf[] = {
 	{ "core_limit",        {0} },
 	{ "total_concurrency", {0} },
 	{ "dest_port",         {0} },
+	{ "keep_alive",        {0} },
 };
 #define NUM_CONF_VAR (sizeof(g_conf) / sizeof(struct conf_var))
 
@@ -69,6 +70,7 @@ static int flowcnt = 0;
 static int concurrency;
 static int max_fds;
 static uint16_t dest_port;
+static int keep_alive = FALSE;
 /*----------------------------------------------------------------------------*/
 struct wget_stat
 {
@@ -234,13 +236,23 @@ SendHTTPRequest(thread_context_t ctx, int sockid, struct wget_vars *wv)
 	wv->recv = 0;
 	wv->header_len = wv->file_len = 0;
 
-	snprintf(request, HTTP_HEADER_LEN, "GET %s HTTP/1.0\r\n"
-			"User-Agent: Wget/1.12 (linux-gnu)\r\n"
-			"Accept: */*\r\n"
-			"Host: %s\r\n"
-//			"Connection: Keep-Alive\r\n\r\n", 
-			"Connection: Close\r\n\r\n", 
-			path, host);
+	if (keep_alive) {
+		snprintf(request, HTTP_HEADER_LEN, "GET %s HTTP/1.0\r\n"
+			 "User-Agent: Wget/1.12 (linux-gnu)\r\n"
+			 "Accept: */*\r\n"
+			 "Host: %s\r\n"
+			 "Connection: Keep-Alive\r\n\r\n",
+			 path, host);
+	} else {
+		snprintf(request, HTTP_HEADER_LEN, "GET %s HTTP/1.0\r\n"
+			 "User-Agent: Wget/1.12 (linux-gnu)\r\n"
+			 "Accept: */*\r\n"
+			 "Host: %s\r\n"
+			 //			"Connection: Keep-Alive\r\n\r\n", 
+			 "Connection: Close\r\n\r\n", 
+			 path, host);
+	}
+
 	len = strlen(request);
 
 	wr = mtcp_write(ctx->mctx, sockid, request, len);
@@ -269,6 +281,51 @@ SendHTTPRequest(thread_context_t ctx, int sockid, struct wget_vars *wv)
 		}
 	}
 
+	return 0;
+}
+/*----------------------------------------------------------------------------*/
+static inline int 
+DownloadNext(thread_context_t ctx, int sockid, struct wget_vars *wv)
+{	
+	mctx_t mctx = ctx->mctx;
+	uint64_t tdiff;
+	struct mtcp_epoll_event ev;
+	
+	TRACE_APP("Socket %d File download complete!\n", sockid);
+	gettimeofday(&wv->t_end, NULL);
+	
+	ctx->stat.completes++;
+	
+	if (wv->recv - wv->header_len != wv->file_len) {
+		fprintf(stderr, "Response size mismatch! "
+			"actual recved: %ld,  expected to recved: %ld\n", 
+			wv->recv-wv->header_len, wv->file_len);
+	}
+	
+	tdiff = (wv->t_end.tv_sec - wv->t_start.tv_sec) * 1000000 + 
+		(wv->t_end.tv_usec - wv->t_start.tv_usec);
+	TRACE_APP("Socket %d Total received bytes: %lu (%luMB)\n", 
+		  sockid, wv->recv, wv->recv / 1000000);
+	TRACE_APP("Socket %d Total spent time: %lu us\n", sockid, tdiff);
+	if (tdiff > 0) {
+		TRACE_APP("Socket %d Average bandwidth: %lf[MB/s]\n", 
+			  sockid, (double)wv->recv / tdiff);
+	}
+	ctx->stat.sum_resp_time += tdiff;
+	if (tdiff > ctx->stat.max_resp_time)
+		ctx->stat.max_resp_time = tdiff;
+	
+	ctx->done++;
+	
+	/* instead of closing the connection, download the next file */
+	memset(&ctx->wvars[sockid], 0, sizeof(struct wget_vars));
+	
+	ctx->started++;
+	
+	ev.events = MOS_EPOLLOUT;
+	ev.data.sock = sockid;
+	mtcp_epoll_ctl(mctx, ctx->ep, MOS_EPOLL_CTL_MOD, sockid, &ev);	
+	
 	return 0;
 }
 /*----------------------------------------------------------------------------*/
@@ -340,6 +397,13 @@ HandleReadEvent(thread_context_t ctx, int sockid, struct wget_vars *wv)
 				wv->response[wv->header_len] = '\0';
 				wv->file_len = http_header_long_val(wv->response, 
 						CONTENT_LENGTH_HDR, sizeof(CONTENT_LENGTH_HDR) - 1);
+				if (wv->file_len < 0) {
+					/* failed to find for the Content-Length field */
+					wv->recv += rd;
+					rd = 0;
+					CloseConnection(ctx, sockid);
+					return 0;
+				}
 				TRACE_APP("Socket %d Parsed response header. "
 						"Header length: %u, File length: %lu (%luMB)\n", 
 						sockid, wv->header_len, 
@@ -389,7 +453,10 @@ HandleReadEvent(thread_context_t ctx, int sockid, struct wget_vars *wv)
 					"header: %u file: %lu recv: %lu write: %lu\n", 
 					sockid, wv->header_len, wv->file_len, 
 					wv->recv - wv->header_len, wv->write);
-			DownloadComplete(ctx, sockid, wv);
+			if (keep_alive && ctx->started < ctx->target)
+				DownloadNext(ctx, sockid, wv);
+			else
+				DownloadComplete(ctx, sockid, wv);
 
 			return 0;
 		}
@@ -451,7 +518,7 @@ PrintStats()
 	fprintf(stderr, "[ ALL ] connect: %7lu, read: %4lu MB, write: %4lu MB, "
 			"completes: %7lu (resp_time avg: %4lu, max: %6lu us)\n", 
 			total.connects, 
-			total.reads / 1000 / 1000, total.writes / 1000 / 1000, 
+			total.reads / 1024 / 1024, total.writes / 1024 / 1024, 
 			total.completes, total_resp_time / core_limit, total.max_resp_time);
 }
 /*----------------------------------------------------------------------------*/
@@ -477,6 +544,7 @@ GlbInitWget()
 	core_limit = atoi(g_conf[2].value);
 	total_concurrency = atoi(g_conf[3].value);
 	dest_port = atoi(g_conf[4].value);
+	keep_alive = atoi(g_conf[5].value);
 
 	if ((strlen(url) == 0)
 			|| (strlen(url) > MAX_URL_LEN)
