@@ -761,7 +761,12 @@ FetchRouteKernelEntries(struct route_conf * const config)
 			}
 			
 			ent->ip = dest;
-			ent->prefix = 32 - __builtin_clz(mask);
+
+			/* __builtin_clz() returns undefined output with zero */
+			if (mask == 0)
+				ent->prefix = 32;
+			else
+				ent->prefix = 32 - __builtin_clz(mask);
 			ent->mask = mask;
 			ent->masked_ip = ent->mask & ent->ip;
 			strcpy(ent->dev_name, dev);
