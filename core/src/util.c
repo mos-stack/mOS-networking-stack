@@ -21,6 +21,9 @@
 #include <stdlib.h>
 
 /*-------------------------------------------------------------*/ 
+extern int
+FetchEndianType();
+/*-------------------------------------------------------------*/ 
 static void 
 BuildKeyCache(uint32_t *cache, int cache_len)
 {
@@ -103,12 +106,13 @@ GetRSSHash(in_addr_t sip, in_addr_t dip, in_port_t sp, in_port_t dp)
 /*-------------------------------------------------------------------*/
 int
 GetRSSCPUCore(in_addr_t sip, in_addr_t dip, 
-	      in_port_t sp, in_port_t dp, int num_queues,
-	      int endian_type)
+	      in_port_t sp, in_port_t dp, int num_queues/*,
+							  int endian_type*/)
 {
 	#define RSS_BIT_MASK 0x0000007F
 
 	uint32_t masked = GetRSSHash(sip, dip, sp, dp) & RSS_BIT_MASK;
+	int endian_type = FetchEndianType();
 
 	if (endian_type) {
 		static const uint32_t off[4] = {3, 1, -1, -3};

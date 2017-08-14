@@ -49,11 +49,12 @@ struct port {
 	TAILQ_ENTRY(port) link;
 };
 
-static int g_core_limit = 1;    /* number of CPU cores used, WHY GLOBAL? */
+static int g_core_limit  = 1;   /* number of CPU cores used, WHY GLOBAL? */
 static in_addr_t g_NATIP = 0;   /* NAT IP address */
 static TAILQ_HEAD(, port) g_free_addrs;
 static pthread_mutex_t g_addrlock;
 
+/*----------------------------------------------------------------------------*/
 static void
 assign_port(mctx_t mctx, int sock)
 {
@@ -70,9 +71,8 @@ assign_port(mctx_t mctx, int sock)
 	/* assign a port number */
 	pthread_mutex_lock(&g_addrlock);
 	TAILQ_FOREACH(w, &g_free_addrs, link)
-		/* XXX (TODO) - Make the last argument (endian-type) flexible */
 		if (GetRSSCPUCore(g_NATIP, addr[MOS_SIDE_SVR].sin_addr.s_addr,
-				  w->port, addr[MOS_SIDE_SVR].sin_port, g_core_limit, 0)
+				  w->port, addr[MOS_SIDE_SVR].sin_port, g_core_limit)
 			 == mctx->cpu)
 			break;
 	if (w) {
@@ -85,7 +85,7 @@ assign_port(mctx_t mctx, int sock)
 	}
 	pthread_mutex_unlock(&g_addrlock);
 }
-
+/*----------------------------------------------------------------------------*/
 static int
 set_addr(mctx_t mctx, int sock, uint32_t ip, uint16_t port, int part)
 {
@@ -115,7 +115,7 @@ set_addr(mctx_t mctx, int sock, uint32_t ip, uint16_t port, int part)
 
 	return 0;
 }
-
+/*----------------------------------------------------------------------------*/
 static void
 translate_addr(mctx_t mctx, int sock, int side, uint64_t events,
 		filter_arg_t *arg)
@@ -151,7 +151,7 @@ translate_addr(mctx_t mctx, int sock, int side, uint64_t events,
 			exit(EXIT_FAILURE);
 	}
 }
-
+/*----------------------------------------------------------------------------*/
 static void
 release_port(mctx_t mctx, int sock, int side, uint64_t events,
 		filter_arg_t *arg)

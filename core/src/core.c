@@ -100,7 +100,7 @@ HandleSignal(int signal)
 		if (sigint_cnt[core] > 0 && cur_ts.tv_sec == sigint_ts[core].tv_sec) {
 			for (i = 0; i < g_config.mos->num_cores; i++) {
 				if (running[i]) {
-					exit(0);
+					//exit(0);
 					g_pctx[i]->exit = TRUE;
 				}
 			}
@@ -112,7 +112,7 @@ HandleSignal(int signal)
 			if (!app_signal_handler) {
 				for (i = 0; i < g_config.mos->num_cores; i++) {
 					if (running[i]) {
-						exit(0);
+						//exit(0);
 						g_pctx[i]->exit = TRUE;
 					}
 				}
@@ -1069,7 +1069,7 @@ InitializeMTCPManager(struct mtcp_thread_context* ctx)
 	mtcp = (mtcp_manager_t)calloc(1, sizeof(struct mtcp_manager));
 	if (!mtcp) {
 		perror("malloc");
-		fprintf(stderr, "Failed to allocate mtcp_manager.\n");
+		TRACE_ERROR("Failed to allocate mtcp_manager.\n");
 		return NULL;
 	}
 	g_mtcp[ctx->cpu] = mtcp;
@@ -1331,10 +1331,6 @@ MTCPRunThread(void *arg)
 	RunMainLoop(ctx);
 	
 	TRACE_DBG("MTCP thread %d finished.\n", ctx->cpu);
-	
-	struct mtcp_context m;
-	m.cpu = cpu;
-	mtcp_free_context(&m);
 
 	/* signaling mTCP thread is done */
 	sem_post(&g_done_sem[mctx->cpu]);
@@ -1428,6 +1424,11 @@ mtcp_destroy_context(mctx_t mctx)
 	struct mtcp_thread_context *ctx = g_pctx[mctx->cpu];
 	if (ctx != NULL)
 		ctx->done = 1;
+
+	struct mtcp_context m;
+	m.cpu = mctx->cpu;
+	mtcp_free_context(&m);
+
 	free(mctx);
 
 	return 0;
@@ -1465,7 +1466,11 @@ mtcp_free_context(mctx_t mctx)
 
 	//pthread_kill(g_thread[mctx->cpu], SIGINT);
 	ctx->exit = 1;
-	pthread_join(g_thread[mctx->cpu], NULL);
+
+	if ((ret = pthread_join(g_thread[ctx->cpu], NULL) != 0)) {
+		TRACE_ERROR("pthread_join() returns error (errno = %s)\n", strerror(ret));
+		exit(EXIT_FAILURE);
+	}
 	
 	TRACE_INFO("MTCP thread %d joined.\n", mctx->cpu);
 	running[mctx->cpu] = FALSE;
@@ -1488,7 +1493,11 @@ mtcp_free_context(mctx_t mctx)
 	if (ret != 1)
 		TRACE_ERROR("CPU %d: Fail to signal socket pair\n", mctx->cpu);
 		
-	pthread_join(log_thread[ctx->cpu], NULL);
+	if ((ret = pthread_join(log_thread[ctx->cpu], NULL) != 0)) {
+		TRACE_ERROR("pthread_join() returns error (errno = %s)\n", strerror(ret));
+		exit(EXIT_FAILURE);
+	}
+
 	fclose(mtcp->log_fp);
 	TRACE_LOG("Log thread %d joined.\n", mctx->cpu);
 

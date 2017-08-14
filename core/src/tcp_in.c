@@ -1038,11 +1038,16 @@ Handle_TCP_ST_FIN_WAIT_1 (mtcp_manager_t mtcp, tcp_stream* cur_stream,
 		if (cur_stream->sndvar->sndbuf) {
 			ProcessACK(mtcp, cur_stream, pctx); 
 		}
-
+#if BE_RESILIENT_TO_PACKET_DROP
 		if (cur_stream->sndvar->is_fin_sent &&
 			((!HAS_STREAM_TYPE(cur_stream, MOS_SOCK_STREAM) &&
-			  pctx->p.ack_seq == cur_stream->sndvar->fss) ||
+			 pctx->p.ack_seq == cur_stream->sndvar->fss) ||
 			 pctx->p.ack_seq == cur_stream->sndvar->fss + 1)) {
+
+#else
+		if (cur_stream->sndvar->is_fin_sent &&
+			pctx->p.ack_seq == cur_stream->sndvar->fss + 1) {
+#endif
 			cur_stream->sndvar->snd_una = pctx->p.ack_seq;
 			if (TCP_SEQ_GT(pctx->p.ack_seq, cur_stream->snd_nxt)) {
 				TRACE_DBG("Stream %d: update snd_nxt to %u\n", 

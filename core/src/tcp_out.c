@@ -223,6 +223,13 @@ SendTCPPacketStandalone(struct mtcp_manager *mtcp,
 		payloadlen++;
 	}
 
+#ifdef PKTDUMP
+	DumpPacket(mtcp,
+			(char *)tcph - sizeof(struct iphdr) - sizeof(struct ethhdr),
+			payloadlen + sizeof(struct iphdr) + sizeof(struct ethhdr),
+			"OUT", -1);
+#endif
+
 	struct mon_listener *walk;
 	/* callback for monitor raw socket */
 	TAILQ_FOREACH(walk, &mtcp->monitors, link)
@@ -380,8 +387,8 @@ SendTCPPacket(struct mtcp_manager *mtcp, tcp_stream *cur_stream,
 		if (recvside_stream) {
 			if (recvside_stream->rcvvar && recvside_stream->rcvvar->rcvbuf)
 				pctx.p.offset = (uint64_t)seq2loff(recvside_stream->rcvvar->rcvbuf,
-								   pctx.p.seq, recvside_stream->rcvvar->irs + 1);
-			
+												   pctx.p.seq,
+												   recvside_stream->rcvvar->irs + 1);
 			UpdateMonitor(mtcp, sendside_stream, recvside_stream, &pctx, false);
 		}
 	}
@@ -409,6 +416,7 @@ FlushTCPSendingBuffer(mtcp_manager_t mtcp, tcp_stream *cur_stream, uint32_t cur_
 	int16_t sndlen;
 	uint32_t window;
 	int packets = 0;
+	uint8_t wack_sent = 0;
 
 	if (!sndvar->sndbuf) {
 		TRACE_ERROR("Stream %d: No send buffer available.\n", cur_stream->id);
@@ -453,6 +461,9 @@ FlushTCPSendingBuffer(mtcp_manager_t mtcp, tcp_stream *cur_stream, uint32_t cur_
 		} else {
 			len = buffered_len;
 		}
+
+		if (len > window)
+			len = window;
 		
 		if (len <= 0)
 			break;
@@ -468,9 +479,10 @@ FlushTCPSendingBuffer(mtcp_manager_t mtcp, tcp_stream *cur_stream, uint32_t cur_
 				TRACE_DBG("Full peer window. "
 					  "peer_wnd: %u, (snd_nxt-snd_una): %u\n", 
 					  sndvar->peer_wnd, seq - sndvar->snd_una);
-				if (TS_TO_MSEC(cur_ts - sndvar->ts_lastack_sent) > 500) {
+				if (!wack_sent && TS_TO_MSEC(cur_ts - sndvar->ts_lastack_sent) > 500) {
 					EnqueueACK(mtcp, cur_stream, cur_ts, ACK_OPT_WACK);
-				}
+				} else
+					wack_sent = 1;
 			}
 			packets = -3;
 			goto out;
@@ -483,10 +495,12 @@ FlushTCPSendingBuffer(mtcp_manager_t mtcp, tcp_stream *cur_stream, uint32_t cur_
 			goto out;
 		}
 		packets++;
+
+		window -= len;
 	}
 
  out:
-	SBUF_UNLOCK(&sndvar->write_lock);	
+	SBUF_UNLOCK(&sndvar->write_lock);
 	return packets;
 }
 /*----------------------------------------------------------------------------*/
@@ -1110,7 +1124,13 @@ __Handle_TCP_ST_ESTABLISHED:
 			cur_stream->sndvar->fss = pctx->p.seq + pctx->p.payloadlen;
 			cur_stream->sndvar->is_fin_sent = TRUE;
 			cur_stream->snd_nxt++;
-			cur_stream->state = TCP_ST_LAST_ACK;
+
+			/* verify whether the FIN from the other end is acked */
+			if ((tcph->ack) && (ntohl(tcph->ack_seq) == cur_stream->rcv_nxt))
+				cur_stream->state = TCP_ST_LAST_ACK;
+			else
+				cur_stream->state = TCP_ST_CLOSING;
+
 			cur_stream->cb_events |= MOS_ON_TCP_STATE_CHANGE;
 			TRACE_STATE("Stream %d: %s\n", 
 				    cur_stream->id,

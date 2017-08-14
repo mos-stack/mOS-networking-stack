@@ -18,8 +18,7 @@
  */
 int
 GetRSSCPUCore(in_addr_t sip, in_addr_t dip, 
-	      in_port_t sp, in_port_t dp, int num_queues,
-	      int endian_check);
+	      in_port_t sp, in_port_t dp, int num_queues);
 
 /** Fill argc and argv by parsing str. Original str might be modified.
  * @param [in] str: source string

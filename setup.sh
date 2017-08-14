@@ -503,44 +503,33 @@ setup_iface_dpdk()
 	exit 1
     fi
     
-    # Next check how many devices are there in the system
-    counter=0
-    cd /sys/module/igb_uio/drivers/pci:igb_uio/
-    for i in *
-    do
-	if [[ $i == *":"* ]]
-	then	    
-	    let "counter=$counter + 1"
-	fi
-    done
-    cd $CUR_DIR
-    
-    iter=0
-    # Configure each device (single-process version)
-    while [ $iter -lt $counter ]
-    do
-	while [ 1 ]; do	
-	    echo
-	    echo "[dpdk$(($iter))] enter IP address[/mask] (e.g., 10.0.$iter.9[/24])"
-	    echo -n "> "
-	    read line
-	    ip_addr=`echo $line | awk -F '/' '{print $1}'`
-	    mask=`echo $line | awk -F '/' '{print $2}'`
-	    valid_ip_addr $ip_addr
-	    if [ $? -eq 0 ]; then
-		break
-	    fi
-	    echo "invalid IP address!" # continue
+	# set ip address for dpdk-enabled interfaces in the system
+	list=`basename -a /sys/class/net/dpdk*`
+	for if_name in ${list//\\n/ }; do
+
+		while [ 1 ]; do	
+			echo
+			echo "[$if_name] enter IP address[/mask] (e.g., 10.0.0.1[/24])"
+			echo -n "> "
+			read line
+			ip_addr=`echo $line | awk -F '/' '{print $1}'`
+			mask=`echo $line | awk -F '/' '{print $2}'`
+			valid_ip_addr $ip_addr
+			if [ $? -eq 0 ]; then
+				break
+			fi
+			echo "invalid IP address!" # continue
+		done
+
+		if [ "$mask" == "" ];then
+			echo "sudo /sbin/ifconfig $if_name $ip_addr up"
+			sudo /sbin/ifconfig $if_name $ip_addr up
+		else
+			echo "sudo /sbin/ifconfig $if_name $ip_addr/$mask up"
+			sudo /sbin/ifconfig $if_name $ip_addr/$mask up
+		fi
 	done
-	if [ "$mask" == "" ];then
-	    echo "sudo /sbin/ifconfig dpdk$(($iter)) $ip_addr up"
-	    sudo /sbin/ifconfig dpdk$(($iter)) $ip_addr up
-	else
-	    echo "sudo /sbin/ifconfig dpdk$(($iter)) $ip_addr/$mask up"
-	    sudo /sbin/ifconfig dpdk$(($iter)) $ip_addr/$mask up
-	fi
-	let "iter=$iter + 1"
-    done
+
 }
 #############################################################################
 
