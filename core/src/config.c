@@ -764,7 +764,7 @@ FetchRouteKernelEntries(struct route_conf * const config)
 
 			/* __builtin_clz() returns undefined output with zero */
 			if (mask == 0)
-				ent->prefix = 32;
+				ent->prefix = 0;
 			else
 				ent->prefix = 32 - __builtin_clz(mask);
 			ent->mask = mask;
