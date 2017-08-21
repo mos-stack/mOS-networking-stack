@@ -28,7 +28,7 @@ before_install:
 before_script:
   - |
       if [ "$VERSION" = "6" ]; then
-        export CC=gcc-5
+        export CC=gcc-6
       elif [ "$VERSION" = "5" ]; then
         export CC=gcc-5
       elif [ "$VERSION" = "4.8" ]; then
