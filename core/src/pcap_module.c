@@ -22,6 +22,8 @@ struct pcap_private_context {
 	u_char wdata[ETHERNET_FRAME_LEN];
 	uint16_t count[MAX_DEVICES];
 } g_pcap_ctx;
+
+#define PCAP_BUFFER_SIZE	(1048576 * 16U)
 /*----------------------------------------------------------------------------*/
 void
 pcap_init_handle(struct mtcp_thread_context *ctxt)
@@ -39,6 +41,15 @@ pcap_recv_pkts(struct mtcp_thread_context *ctxt, int ifidx)
 	if ((ppc->rdata = pcap_next(ppc->handle[ifidx], &ppc->phdr)) == NULL)
 		return 0;
 	
+	if (ppc->phdr.caplen != ppc->phdr.len)
+		TRACE_ERROR("caplen = %u, len: %u\n", 
+			    ppc->phdr.caplen,
+			    ppc->phdr.len);
+
+	/* sanity check */
+	if (ppc->rdata == NULL)
+		return 0;
+
 	return 1; /* PCAP always receives only one packet */
 }
 /*----------------------------------------------------------------------------*/
@@ -118,13 +129,31 @@ pcap_load_module_upper_half(void)
 	struct netdev_entry **ent = g_config.mos->netdev_table->ent;
 
 	for (i = 0; i < g_config.mos->netdev_table->num; i++) {
+#if 0
 		g_pcap_ctx.handle[i] = pcap_open_live(ent[i]->dev_name, BUFSIZ, 1,
 										1, errbuf);
 		if (!g_pcap_ctx.handle[i]) {
 			TRACE_ERROR("Interface '%s' not found\n", ent[i]->dev_name);
 			exit(EXIT_FAILURE);
 		}
+#endif
+		g_pcap_ctx.handle[i] = pcap_create(ent[i]->dev_name, errbuf);
+		if (!g_pcap_ctx.handle[i]) {
+			TRACE_ERROR("Interface '%s' not found\n", ent[i]->dev_name);
+			exit(EXIT_FAILURE);
+		}
 		g_pcap_ctx.dev_name[i] = ent[i]->dev_name;
+
+		if (pcap_set_buffer_size(g_pcap_ctx.handle[i], PCAP_BUFFER_SIZE) != 0) {
+			TRACE_ERROR("Can't increase buffer size to %u bytes\n",
+				    PCAP_BUFFER_SIZE);
+		}
+
+		if (pcap_activate(g_pcap_ctx.handle[i]) < 0) {
+			TRACE_ERROR("Failed to activate pcap handle!\n");
+			pcap_perror(g_pcap_ctx.handle[i], "");
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	num_queues = 1;

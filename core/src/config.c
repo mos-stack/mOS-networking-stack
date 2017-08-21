@@ -1247,8 +1247,10 @@ FreeConfigResources()
 int
 FetchEndianType()
 {
+#ifdef ENABLE_DPDK
 	char *argv;
 	char **argp = &argv;
+
 	if (current_iomodule_func == &dpdk_module_func) {
 		/* dpdk_module_func logic down below */
 		dpdk_module_func.dev_ioctl(NULL, 0, DRV_NAME, (void *)argp);
@@ -1257,7 +1259,7 @@ FetchEndianType()
 		
 		return 0;
 	}
-	
+#endif	
 	return 1;
 }
 /*----------------------------------------------------------------------------*/
