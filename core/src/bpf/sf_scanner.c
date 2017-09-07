@@ -2713,7 +2713,7 @@ __thread char *sfbpf_text;
  */
 
 #ifndef lint
-static const char rcsid[] =
+static const char __attribute__ ((unused)) rcsid[] =
     "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/scanner.l,v 1.2 2010/05/06 19:13:25 maltizer Exp $ (LBL)";
 #endif
 

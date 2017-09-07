@@ -23,7 +23,7 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 #ifndef lint
-static const char rcsid[] =
+static const char __attribute__ ((unused)) rcsid[] =
     "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sf_gencode.c,v 1.6 2014/06/10 13:38:55 cwaxman Exp $ (LBL)";
 #endif
 

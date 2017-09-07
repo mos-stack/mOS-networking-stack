@@ -23,7 +23,7 @@
  *  Optimization module for tcpdump intermediate representation.
  */
 #ifndef lint
-static const char rcsid[] =
+static const char __attribute__ ((unused)) rcsid[] =
     "@(#) $Header: /usr/cvsroot/sfeng/ims/src/libraries/daq/daq/sfbpf/sf_optimize.c,v 1.3 2013/06/28 14:57:30 rcombs Exp $ (LBL)";
 #endif
 
