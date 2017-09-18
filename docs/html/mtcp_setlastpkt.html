@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.2 -->
-<!-- CreationDate: Fri Feb  3 15:37:41 2017 -->
+<!-- Creator     : groff version 1.22.3 -->
+<!-- CreationDate: Mon Aug 28 06:36:47 2017 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -13,12 +13,12 @@
        table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
        h1      { text-align: center }
 </style>
-<title>mtcp_ppeek</title>
+<title>mtcp_setlastpkt</title>
 <link rel="stylesheet" href="./common.css">
 </head>
 <body>
 <div class="main">
-<h1 align="center">mtcp_ppeek</h1>
+<h1 align="center">mtcp_setlastpkt</h1>
 <!--
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -28,6 +28,7 @@
 <a href="#AUTHORS">AUTHORS</a><br>
 <a href="#SEE ALSO">SEE ALSO</a><br>
 <a href="#COLOPHON">COLOPHON</a><br>
+
 <hr>
 -->
 
@@ -36,9 +37,10 @@
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">mtcp_ppeek
-&minus; Peek into the bytestream from a monitoring socket
-from a given offset</p>
+
+<p style="margin-left:11%; margin-top: 1em">mtcp_setlastpkt
+&minus; modifies the last Ethernet frame of a monitoring
+flow</p>
 
 <h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
@@ -49,10 +51,10 @@ from a given offset</p>
 &lt;mos_api.h&gt;</b></p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>ssize_t
-mtcp_ppeek(mctx_t</b> <i>mctx</i><b>, int</b>
-<i>sockid</i><b>, int</b> <i>side</i><b>, char
-*</b><i>buf</i><b>, size_t</b> <i>len</i><b>, uint64_t</b>
-<i>off</i><b>);</b></p>
+mtcp_setlastpkt(mctx_t</b> <i>mctx</i><b>, int</b>
+<i>sockid</i><b>, int</b> <i>side</i><b>, off_t</b>
+<i>offset</i><b>, byte *</b> <i>data</i><b>, uint16_t</b>
+<i>datalen</i><b>, int</b> <i>option</i><b>);</b></p>
 
 <h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
@@ -60,50 +62,77 @@ mtcp_ppeek(mctx_t</b> <i>mctx</i><b>, int</b>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>mtcp_ppeek</b>()
-can be used to peek up to <i>len</i> number of bytes from a
-monitoring socket via socket descriptor <i>sockid</i> into
-the buffer starting at <i>buf. from off ;</i> value which is
-the offset distance (in bytes) from the TCP initial sequence
-number. It is the responsibility of the user to allocate
-memory for <i>buf</i> array.</p>
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_setlastpkt</b>()
+updates the last Ethernet frame for a given flow observed by
+the stack. The user can specify the flow and direction with
+the socket descriptor <i>sockid</i> and the <i>side</i>
+argument (MOS_SIDE_CLI or MOS_SIDE_SVR) to specify the
+Ethernet frame of her choosing to be modified.</p>
 
-<p style="margin-left:11%; margin-top: 1em">For cases when
-the total number of buffered unread bytes in the socket are
-less than <i>len,</i> <b>mtcp_ppeek()</b> copies entire data
-to <i>buf</i> and returns the actual number of bytes that
-can be used by the application.</p>
+<p style="margin-left:11%; margin-top: 1em">The
+<i>option</i> argument can be used to define which action
+should be performed on the packet. The value of
+<i>option</i> should be the logical disjunction of action to
+perform (MOS_DROP or MOS_OVERWRITE),
+position for modification (MOS_ETH_HDR or
+MOS_IP_HDR or MOS_TCP_HDR or MOS_TCP_PAYLOAD), and
+checksum operation to perform (MOS_UPDATE_IP_CHKSUM or
+MOS_UPDATE_TCP_CHKSUM). It allows modifying the packet contents
+as long as the overall TCP payload size is not changed.
+</p>
 
-<p style="margin-left:11%; margin-top: 1em">Note that the
-<i>off</i> can also point to the data in the fragmented
-buffer list of the TCP ring buffer (see
-<b>mtcp_getsockopt()).</b> If there is no received byte at
-<i>off</i> in the TCP ring buffer, it returns error. If
-there are received bytes starting from <i>off ,</i> len is
-set to be the number of bytes read from the buffer. After
-<b>mtcp_ppeek(),</b> the data in the TCP ring buffer will
-not be flushed, and the monitor offset used by
-<b>mtcp_peek()</b> is not changed.</p>
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
 
-<p style="margin-left:11%; margin-top: 1em">An
-<b>mtcp_ppeek</b>() call takes two additional argument named
-<i>mctx ,</i> that represents the per-core mTCP context in
-an application (see <b>mtcp_create_context()</b> for
-details); and <i>side</i> that informs the stack whether it
-needs to peek the client (MOS_SIDE_CLI) or server
-(MOS_SIDE_SVR) side.</p>
+<p style="margin-left:11%; margin-top: 1em"><b>MOS_DROP</b></p></td>
+<td width="6%"></td>
+<td width="71%">
+
+<p>Drop the last Ethernet frame. This option ignores any
+  other flags in the <i>option</i> parameter.</p></td>
+</tr>
+
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+<p style="margin-left:11%; margin-top: 1em"><b>MOS_OVERWRITE</b></p></td>
+<td width="6%"></td>
+<td width="71%">
+
+<p>Overwrite some data onto the
+specific header or payload (MOS_ETH_HDR or MOS_IP_HDR or
+MOS_TCP_HDR or MOS_TCP_PAYLOAD) of the last Ethernet frame.
+The user can specify the offset from where the data should
+be written ( <i>offset</i> ), the data buffer that contains
+the data to be written ( <i>data</i> ), and the bytes in the
+data buffer ( <i>datalen</i> ).</p></td>
+</tr>
+
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here are some
+restrictions on the <i>option</i> field: (a) MOS_DROP and
+MOS_OVERWRITE are mutually
+exclusive parameters, but one of them should be specified in
+the <i>option</i> field. (b) MOS_DROP ignores any other
+flags in the <i>option</i> parameter. (c) MOS_ETH_HDR,
+MOS_IP_HDR, MOS_TCP_HDR, and MOS_TCP_PAYLOAD are mutually
+exclusive parameters, but one of them should be specified in
+the <i>option</i> field.</p>
 
 <h2>RETURN VALUE
 <a name="RETURN VALUE"></a>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">On success, the
-number of bytes read is returned. It is not an error if this
-number is smaller than the number of bytes requested; this
-may happen when the socket has fewer number of bytes
-buffered at that moment. On all errors, -1 is returned and
-<i>errno</i> is set appropriately.</p>
+<p style="margin-left:11%; margin-top: 1em">Returns 0 on
+success. On all errors, -1 is returned and <i>errno</i> is
+set appropriately.</p>
 
 <h2>ERRORS
 <a name="ERRORS"></a>
@@ -210,8 +239,7 @@ team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>mtcp_peek</b>(),
-<b>mtcp_socket</b>(),</p>
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_getlastpkt</b>(),</p>
 
 <h2>COLOPHON
 <a name="COLOPHON"></a>
@@ -222,8 +250,7 @@ team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
 part of mOS release 0.3 <i>docs</i> section. A description
 of the project, and information about reporting bugs, can be
 found at http://mos.kaist.edu/.</p>
-<!-- <hr>-->
-<br>
+<hr>
 <div class="footer">
   <img src="back-arrow.jpg" width="2%" height="2%"><a href="http://mos.kaist.edu/index_man.html">Back to Index</a>
 </div>

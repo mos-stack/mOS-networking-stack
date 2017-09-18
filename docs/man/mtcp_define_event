@@ -1,0 +1,106 @@
+.TH mtcp_define_event 3 2017-08-28 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_define_event \- define a user-defined event function
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "int mtcp_define_event(event_t " event ", filter_t " filter ", struct filter_arg * " arg " );
+
+.SH DESCRIPTION
+.BR mtcp_define_event () 
+creates a new user-defined event (UDE) with a base event
+.I "event"
+and a filter function
+.I "filter"
+with a filter argument
+.I "arg"
+.
+
+More specifically, a UDE is defined as a based event and a boolean
+filter function that determines the event condition. When the base
+event for a UDE is raised, mOS triggers the UDE only when the filter
+function is evaluated to be true.
+
+.I "event"
+argument is a typedef'ed uint64_t integer. It can be either a built-in
+event or a user-defined event. mOS provides the following
+built-in events that a user can employ:
+
+.TS
+tab(:) allbox;
+c s
+l l.
+Events
+Type:Description
+MOS_ON_PKT_IN:T{
+Packet arrival.
+T}
+MOS_ON_CONN_START:T{
+Connection initiation (the first SYN packet).
+T}
+MOS_ON_REXMIT:T{
+TCP packet retransmission.
+T}
+MOS_ON_TCP_STATE_CHANGE:T{
+TCP state transition.
+T}
+MOS_ON_CONN_END:T{
+Connection termination.
+T}
+MOS_ON_CONN_NEW_DATA:T{
+New flow data.
+T}
+MOS_ON_ORPHAN:T{
+Out-of-flow (or non-TCP) packet arrival.
+T}
+MOS_ON_ERROR:T{
+Error report (e.g. receive buffer full (see
+.BR mtcp_peek())).
+T}
+.TE
+.PP
+
+A typical usage of
+.BR mtcp_define_event()
+is illustrated below:
+.PP
+
+ /*************************************************/
+  // creates a passive monitoring socket with its scope
+  s = mtcp_socket(m, AF_INET, MOS_SOCK_MONITOR_STREAM, 0);
+  ft.stream_syn_filter = "dst net 216.58 and dst port 80";
+  mtcp_bind_monitor_filter(m, s, &ft);  
+ 
+  // defines a user-defined event that detects an HTTP request
+  hev = mtcp_define_event(MOS_ON_CONN_NEW_DATA, IsHTTPRequest, NULL);
+ /*************************************************/
+
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns 0 on success; -1 on failure.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 15
+.B "EINVAL"
+The socket descriptor,
+.I "sockid"
+is invalid.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_socket (),
+.BR mtcp_bind_monitor_filter (),
+.BR mtcp_register_callback ()
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

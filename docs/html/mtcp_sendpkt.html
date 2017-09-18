@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.2 -->
-<!-- CreationDate: Sat Feb  4 18:19:20 2017 -->
+<!-- Creator     : groff version 1.22.3 -->
+<!-- CreationDate: Sat Aug 26 16:40:01 2017 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -13,12 +13,12 @@
        table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
        h1      { text-align: center }
 </style>
-<title>mtcp_getlastpkt</title>
+<title>mtcp_sendpkt</title>
 <link rel="stylesheet" href="./common.css">
 </head>
 <body>
 <div class="main">
-<h1 align="center">mtcp_getlastpkt</h1>
+<h1 align="center">mtcp_sendpkt</h1>
 <!--
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -28,6 +28,7 @@
 <a href="#AUTHORS">AUTHORS</a><br>
 <a href="#SEE ALSO">SEE ALSO</a><br>
 <a href="#COLOPHON">COLOPHON</a><br>
+
 <hr>
 -->
 
@@ -36,10 +37,8 @@
 </h2>
 
 
-
-<p style="margin-left:11%; margin-top: 1em">mtcp_getlastpkt
-&minus; Retrieves the last Ethernet frame of a monitoring
-flow</p>
+<p style="margin-left:11%; margin-top: 1em">mtcp_sendpkt
+&minus; Sends a self-constructed TCP packet to network</p>
 
 <h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
@@ -50,8 +49,8 @@ flow</p>
 &lt;mos_api.h&gt;</b></p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>int
-mtcp_getlastpkt(mctx_t</b> <i>mctx</i><b>, int</b>
-<i>sockid</i><b>, int</b> <i>side</i><b>, struct pkt_info
+mtcp_sendpkt(mctx_t</b> <i>mctx</i><b>, int</b>
+<i>sockid</i><b>, struct pkt_info
 *</b><i>pinfo</i><b>);</b></p>
 
 <h2>DESCRIPTION
@@ -60,15 +59,16 @@ mtcp_getlastpkt(mctx_t</b> <i>mctx</i><b>, int</b>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>mtcp_getlastpkt</b>()
-fetches a copy of the last Ethernet frame for a given flow
-observed by the stack. The user can select the socket
-descriptor using <i>sockid</i> and the <i>side</i> argument
-(MOS_SIDE_CLI or MOS_SIDE_SVR) to fetch the Ethernet frame
-of her choosing. <i>pinfo</i> points to an instance of
-<b>struct</b> pkt_info that should be allocated by the user
-before calling the function. The structure is defined
-as:</p>
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_sendpkt</b>()
+sends a self-constructed TCP packet for a given flow to
+network. The user can select the socket descriptor using
+<i>sockid</i> and the <i>pinfo</i> points to an instance of
+<b>struct</b> pkt_info that is allocated and filled by the
+user via mtcp_getlastpkt() function.
+It is the user's responsibility to allocate the <i>pkt_info </i>
+structure before the function call, and free the
+<i>pkt_info</i> after the function call. The structure is
+defined as:</p>
 
 <p style="margin-left:11%; margin-top: 1em">struct pkt_info
 {</p>
@@ -81,128 +81,123 @@ as:</p>
 <td width="85%">
 
 
-<p>// pkt recving time<br>uint32_t cur_ts;</p></td></tr>
-<!--<tr valign="top" align="left">
-<td width="8%"></td>
-<td width="7%"></td>
-<td width="85%">
-
-
-<p>uint32_t cur_ts;</p></td></tr>-->
+<p>// pkt recving time</p></td></tr>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="7%"></td>
 <td width="85%">
 
 
-<p>// ETH<br>uint16_t eth_len;</p></td></tr>
-<!--
+<p>uint32_t cur_ts;</p></td></tr>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="7%"></td>
 <td width="85%">
 
 
-<p></p></td></tr>-->
+<p>// ETH</p></td></tr>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="7%"></td>
 <td width="85%">
 
 
-<p>// IP<br>uint16_t ip_len;</p></td></tr>
-<!--<tr valign="top" align="left">
-<td width="8%"></td>
-<td width="7%"></td>
-<td width="85%">
-
-
-<p></p></td></tr>-->
+<p>uint16_t eth_len;</p></td></tr>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="7%"></td>
 <td width="85%">
 
 
-<p>//TCP<br>uint64_t offset; // TCP recv buffer offset<br>uint16_t payloadlen;<br>uint32_t seq;<br>uint32_t ack_seq;<br>uint16_t window;</p></td></tr>
-<!--<tr valign="top" align="left">
-<td width="8%"></td>
-<td width="7%"></td>
-<td width="85%">
-
-
-<p></p></td></tr>
+<p>// IP</p></td></tr>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="7%"></td>
 <td width="85%">
 
 
-<p></p></td></tr>
+<p>uint16_t ip_len;</p></td></tr>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="7%"></td>
 <td width="85%">
 
 
-<p></p></td></tr>
+<p>//TCP</p></td></tr>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="7%"></td>
 <td width="85%">
 
 
-<p></p></td></tr>
+<p>uint64_t offset; // TCP recv buffer offset</p></td></tr>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="7%"></td>
 <td width="85%">
 
 
-<p></p></td></tr>-->
+<p>uint16_t payloadlen;</p></td></tr>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="7%"></td>
 <td width="85%">
 
 
-<p>struct ethhdr *ethh;<br>struct iphdr *iph;<br>struct tcphdr *tcph;<br>uint8_t *payload;</p></td></tr>
-<!--<tr valign="top" align="left">
-<td width="8%"></td>
-<td width="7%"></td>
-<td width="85%">
-
-
-<p></p></td></tr>
+<p>uint32_t seq;</p></td></tr>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="7%"></td>
 <td width="85%">
 
 
-<p></p></td></tr>
+<p>uint32_t ack_seq;</p></td></tr>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="7%"></td>
 <td width="85%">
 
 
-<p></p></td></tr>-->
+<p>uint16_t window;</p></td></tr>
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="7%"></td>
+<td width="85%">
+
+
+<p>struct ethhdr *ethh;</p></td></tr>
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="7%"></td>
+<td width="85%">
+
+
+<p>struct iphdr *iph;</p></td></tr>
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="7%"></td>
+<td width="85%">
+
+
+<p>struct tcphdr *tcph;</p></td></tr>
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="7%"></td>
+<td width="85%">
+
+
+<p>uint8_t *payload;</p></td></tr>
 </table>
 
 <p style="margin-left:11%;">}</p>
 
 <p style="margin-left:11%; margin-top: 1em">A successful
-call to <b>mtcp_getlastpkt()</b> creates a copy of the last
-recorded Ethernet frame and appends its meta-data (in host byte order). The last
-four fields of <i>pinfo</i> (ethh, iph, tcph and payload)
-point to the copied frame at the appropriate offsets. Please
-note that the packet buffer that contains the copied frame
-is reused for future invocations of
-<b>mtcp_getlastpkt().</b></p>
+call to <b>mtcp_sendpkt()</b> constructs a TCP packet based
+on the given packet information <i>pinfo</i> and send the
+packet to the network.</p>
 
 <p style="margin-left:11%; margin-top: 1em">An
-<b>mtcp_getlastpkt</b>() call takes an additional argument
+<b>mtcp_sendpkt</b>() call takes an additional argument
 named <i>mctx</i> that represents the per-core mTCP context
 in an application (see <b>mtcp_create_context()</b> for
 details).</p>
@@ -233,18 +228,8 @@ set appropriately.</p>
 <td width="66%">
 
 
-<p style="margin-top: 1em"><i>mctx</i> is invalid.</p></td></tr>
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="11%">
-
-
-<p><b>EPERM</b></p></td>
-<td width="12%"></td>
-<td width="66%">
-
-
-<p>Permission denied.</p></td></tr>
+<p style="margin-top: 1em"><i>mctx</i> is invalid, or
+<i>pinfo</i> is NULL.</p></td></tr>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="11%">
@@ -255,21 +240,11 @@ set appropriately.</p>
 <td width="66%">
 
 
-<p>The last captured Ethernet frame for this flow does not
-exist. This can occur if <b>mtcp_getlastpkt()</b> is called
-during e.g. connection initiation.</p></td></tr>
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="11%">
-
-
-<p><b>EBADF</b></p></td>
-<td width="12%"></td>
-<td width="66%">
-
-
-<p><i>sockid</i> is not a valid socket descriptor for
-creating a connection.</p></td></tr>
+<p>The packet information does not contain a valid IP
+header or TCP header information. This normally does not
+occur when we put the result of the <b>mtcp_sendpkt()</b>
+function. Therefore, it means that the user modified the
+packet information inappropriately.</p></td></tr>
 </table>
 
 <h2>AUTHORS
@@ -298,8 +273,7 @@ team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
 part of mOS release 0.3 <i>docs</i> section. A description
 of the project, and information about reporting bugs, can be
 found at http://mos.kaist.edu/.</p>
-<!-- <hr> -->
-<br>
+<hr>
 <div class="footer">
   <img src="back-arrow.jpg" width="2%" height="2%"><a href="http://mos.kaist.edu/index_man.html">Back to Index</a>
 </div>

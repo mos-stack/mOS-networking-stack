@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.2 -->
-<!-- CreationDate: Wed Feb 22 20:27:37 2017 -->
+<!-- Creator     : groff version 1.22.3 -->
+<!-- CreationDate: Sat Aug 26 17:18:05 2017 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -13,12 +13,12 @@
        table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
        h1      { text-align: center }
 </style>
-<title>mtcp_getconf</title>
+<title>mtcp_setconf</title>
 <link rel="stylesheet" href="./common.css">
 </head>
 <body>
 <div class="main">
-<h1 align="center">mtcp_getconf</h1>
+<h1 align="center">mtcp_setconf</h1>
 <!--
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -29,6 +29,7 @@
 <a href="#AUTHORS">AUTHORS</a><br>
 <a href="#SEE ALSO">SEE ALSO</a><br>
 <a href="#COLOPHON">COLOPHON</a><br>
+
 <hr>
 -->
 
@@ -37,9 +38,9 @@
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">mtcp_getconf
-&minus; retrieve the running configuration of mOS
-application</p>
+<p style="margin-left:11%; margin-top: 1em">mtcp_setconf
+&minus; Update mOS-related configuration for mOS app
+initialization</p>
 
 <h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
@@ -50,7 +51,8 @@ application</p>
 &lt;mtcp_api.h&gt;</b></p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>int
-mtcp_getconf(struct mtcp_conf *</b><i>conf</i><b>);</b></p>
+mtcp_setconf(const struct mtcp_conf
+*</b><i>conf</i><b>);</b></p>
 
 <h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
@@ -58,11 +60,11 @@ mtcp_getconf(struct mtcp_conf *</b><i>conf</i><b>);</b></p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>mtcp_getconf</b>()
-call is used to fetch the current running configuration of
-the mOS core. The <i>conf</i> argument is a pointer to a
-user-allocated <i>struct mtcp_conf</i> that contains a
-number of fields including:</p>
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_setconf</b>()
+call is used to update the configuration of the mOS core.
+The <i>conf</i> argument is a pointer to a user-defined
+<i>struct mtcp_conf</i> that contains a number of fields
+including:</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -166,6 +168,18 @@ NULL.</p> </td>
 </h2>
 
 
+<p style="margin-left:11%; margin-top: 1em">This function
+is useful when the user wants to override the mOS
+configuration. For example, the user can first call
+<b>mtcp_getconf()</b> function, and change the parameters of
+<i>struct mtcp_conf</i> and then call this function to
+override the configuration.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Please note
+that this function should be called before you call
+<b>mtcp_create_context()</b> which creates mOS context and
+launches the mOS threads.</p>
+
 <p style="margin-left:11%; margin-top: 1em">See
 <i>http://mos.kaist.edu/guide/walkthrough/05_configuration.html</i>
 to view example startup mOS configuration file.</p>
@@ -207,8 +221,7 @@ team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
 part of mOS release 0.3 <i>docs</i> section. A description
 of the project, and information about reporting bugs, can be
 found at http://mos.kaist.edu/.</p>
-<!-- <hr> -->
-<br>
+<hr>
 <div class="footer">
   <img src="back-arrow.jpg" width="2%" height="2%"><a href="http://mos.kaist.edu/index_man.html">Back to Index</a>
 </div>

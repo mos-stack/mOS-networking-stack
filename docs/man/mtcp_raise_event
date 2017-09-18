@@ -1,0 +1,69 @@
+.TH mtcp_raise_event 3 2017-08-28 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_raise_event \- raise a child event for a multi-event filter
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "int mtcp_raise_event(mctx_t " mctx ", event_t " child_event );
+
+.SH DESCRIPTION
+.BR mtcp_raise_event ()
+raises a child event
+.I "child_event"
+, in turn, the callback functions and
+the filter functions registered to the child event will be triggered.
+
+The
+.I "child_event"
+should be a event that is allocated via
+.B "mtcp_alloc_event ()"
+. Any mOS built-in events (e.g., MOS_ON_CONN_NEW_DATA)
+or user-defined events which is created via
+.B "mtcp_define_event ()"
+are triggered automatically by mOS core based on its
+condition, and those events are not allowed to be
+triggered by
+.B "mtcp_alloc_event ()"
+.
+
+This function is designed to be called inside event-filter functions,
+so that a single filter can trigger a set of multiple child events
+based on the processing result inside the filter function.
+
+For example, a filter function can be a string-pattern matching function
+that finds for multiple possible patterns. According to the pattern-matching
+result, it can trigger multiple child events that corresponds to each pattern.
+In this case,
+.BR mtcp_raise_event ()
+can be called multiple times inside the filter function for each pattern
+found in the given string.
+
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+
+Returns 0 on success. 
+When the given
+.I "child_event"
+parameter points to any event that is undefined or invalid
+(not the one created via
+.B "mtcp_alloc_event()"
+), it fails and returns -1.
+
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_alloc_event (),
+.BR mtcp_define_event ()
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

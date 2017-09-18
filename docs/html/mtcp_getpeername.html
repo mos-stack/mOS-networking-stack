@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.2 -->
-<!-- CreationDate: Wed Feb  1 22:24:31 2017 -->
+<!-- Creator     : groff version 1.22.3 -->
+<!-- CreationDate: Mon Aug 28 02:48:48 2017 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -13,31 +13,35 @@
        table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
        h1      { text-align: center }
 </style>
-<title>mtcp_bind</title>
+<title>mtcp_getpeername</title>
 <link rel="stylesheet" href="./common.css">
 </head>
 <body>
 <div class="main">
-<h1 align="center">mtcp_bind</h1>
+<h1 align="center">mtcp_getpeername</h1>
 <!--
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
 <a href="#RETURN VALUE">RETURN VALUE</a><br>
 <a href="#ERRORS">ERRORS</a><br>
+<a href="#NOTES">NOTES</a><br>
 <a href="#AUTHORS">AUTHORS</a><br>
 <a href="#SEE ALSO">SEE ALSO</a><br>
 <a href="#COLOPHON">COLOPHON</a><br>
+
 <hr>
 -->
+
 
 <h2>NAME
 <a name="NAME"></a>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">mtcp_bind
-&minus; bind an IP address to an mTCP socket</p>
+
+<p style="margin-left:11%; margin-top: 1em">mtcp_getpeername
+&minus; get name of end hosts being monitored by mOS</p>
 
 <h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
@@ -45,12 +49,13 @@
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>#include
-&lt;mtcp_api.h&gt;</b></p>
+&lt;mos_api.h&gt;</b></p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>int
-mtcp_bind(mctx_t</b> <i>mctx</i><b>, int</b>
-<i>sockid</i><b>, const struct sockaddr *</b><i>addr</i><b>,
-socklen_t</b> <i>addrlen</i><b>);</b></p>
+mtcp_getpeername(mctx_t</b> <i>mctx</i><b>, int</b>
+<i>sockfd</i><b>, struct sockaddr *</b><i>addr</i><b>,
+socklen_t *</b><i>addrlen,</i><b>int</b> <i>side</i>
+<b>);</b></p>
 
 <h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
@@ -58,30 +63,28 @@ socklen_t</b> <i>addrlen</i><b>);</b></p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>mtcp_bind</b>()
-can be used to bind an IPv4 address (assigning a name) to an
-mTCP socket. This socket is referred to by the <i>sockid</i>
-argument. The <i>addr</i> structure contains the address and
-the port number (both in network byte order) to be bound
-while the <i>addrlen</i> specifies the size of the address
-structure pointing to <i>addr.</i> The actual structure
-passed for the <i>addr</i> argument is defined as:</p>
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_getpeername</b>()
+returns the address of the end hosts that is being monitored by the
+socket <i>sockfd</i> , in the buffer pointed to by
+<i>addr.</i> The <i>addrlen</i> argument should be
+initialized to indicate the amount of space (in bytes)
+pointed to by <i>addr.</i> On return it contains the actual
+size of the socket address.</p>
 
-<p style="margin-left:17%; margin-top: 1em">struct sockaddr
-{ <br>
-sa_family_t sa_family; /* AF_INET */ <br>
-char sa_data[14]; /* IPv4 address + TCP port */ <br>
-}</p>
+<p style="margin-left:11%; margin-top: 1em"><i>side</i>
+variable should be properly set (either MOS_SIDE_CLI or
+MOS_SIDE_SVR) to specify on which side this function is
+  interested in.</p>
 
-<p style="margin-left:11%; margin-top: 1em">It is necessary
-to assign a local address using <b>mtcp_bind()</b> on a
-passive socket before it can be used to receive connections
-using <b>mtcp_accept().</b></p>
+<p style="margin-left:11%; margin-top: 1em">If <i>addrlen</i>
+argument is set to be <i>2 * sizeof(struct sockaddr)</i>,
+it will fill up the socket address of the other side as well.
+</p>
 
-<p style="margin-left:11%; margin-top: 1em">The
-<b>mtcp_bind</b>() call takes an additional argument named
-<i>mctx</i> that represents the per-core mTCP context in an
-application (see <b>mtcp_create_context()</b> for
+<p style="margin-left:11%; margin-top: 1em">An
+<b>mtcp_getpeername</b>() call takes an additional argument
+named <i>mctx</i> that represents the per-core mTCP context
+in an application (see <b>mtcp_create_context()</b> for
 details).</p>
 
 <h2>RETURN VALUE
@@ -89,7 +92,7 @@ details).</p>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">Returns 0 on
+<p style="margin-left:11%; margin-top: 1em">Returns zero on
 success; -1 on failure. In case of failure, <i>errno</i> is
 set appropriately.</p>
 
@@ -110,8 +113,8 @@ set appropriately.</p>
 <td width="74%">
 
 
-<p style="margin-top: 1em"><i>sockid</i> is not a valid
-socket descriptor for binding to an address.</p></td></tr>
+<p style="margin-top: 1em">The argument <i>sockfd</i> is
+not a valid socket descriptor.</p></td></tr>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="12%">
@@ -122,30 +125,41 @@ socket descriptor for binding to an address.</p></td></tr>
 <td width="74%">
 
 
-<p>The <i>addr</i> argument is NULL. This may also mean
-that an address is already bound to the current
-<i>sockid</i> descriptor.</p></td></tr>
+<p><i>addrlen</i> argument is invalid (e.g., is
+negative).</p> </td></tr>
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="12%">
 
 
-<p><b>ENOTSOCK</b></p></td>
+<p><b>ENOTCONN</b></p></td>
 <td width="3%"></td>
 <td width="74%">
 
 
-<p>The socket referred to by <i>sockid</i> has an invalid
-type.</p> </td></tr>
+<p>The argument <i>sockfd</i> is pointing to a mOS socket
+which has no corresponding stream that is being
+monitored.</p> </td></tr>
 </table>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The third
+argument of <b>mtcp_getpeername()</b> is in reality an
+<i>int *</i> (and this is what 4.x BSD and libc4 and libc5
+have). Some POSIX confusion resulted in the present
+<i>socklen_t ,</i> also used by glibc.</p>
 
 <h2>AUTHORS
 <a name="AUTHORS"></a>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">mOS
-development team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
+<p style="margin-left:11%; margin-top: 1em">mOS development
+team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
 
 <h2>SEE ALSO
 <a name="SEE ALSO"></a>
@@ -153,10 +167,8 @@ development team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>mtcp_socket</b>(),
-<b>mtcp_listen</b>(), <b>mtcp_accept</b>(),
-<b>mtcp_connect</b>(), <b>mtcp_read</b>(),
-<b>mtcp_write</b>()</p>
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_bind</b>(),
+<b>mtcp_socket</b>()</p>
 
 <h2>COLOPHON
 <a name="COLOPHON"></a>
@@ -167,8 +179,7 @@ development team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
 part of mOS release 0.3 <i>docs</i> section. A description
 of the project, and information about reporting bugs, can be
 found at http://mos.kaist.edu/.</p>
-<!--<hr>-->
-<br>
+<hr>
 <div class="footer">
   <img src="back-arrow.jpg" width="2%" height="2%"><a href="http://mos.kaist.edu/index_man.html">Back to Index</a>
 </div>

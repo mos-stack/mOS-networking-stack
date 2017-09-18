@@ -1,0 +1,132 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!-- CreationDate: Mon Aug 28 07:57:52 2017 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>mtcp_raise_event</title>
+<link rel="stylesheet" href="./common.css">
+</head>
+<body>
+<div class="main">
+<h1 align="center">mtcp_raise_event</h1>
+<!--
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+-->
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">mtcp_raise_event
+&minus; raise a child event for a multi-event filter</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;mos_api.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mtcp_raise_event(mctx_t</b> <i>mctx</i><b>, event_t</b>
+<i>child_event</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_raise_event</b>()
+raises a child event <i>child_event</i> , in turn, the
+callback functions and the filter functions registered to
+the child event will be triggered.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>child_event</i> should be a event that is allocated via
+<b>mtcp_alloc_event ()</b> or user-defined events which is
+created via <b>mtcp_define_event ()</b> are triggered
+automatically by mOS core based on its condition, and those
+events are not allowed to be triggered by
+<b>mtcp_alloc_event ()</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">This function
+is designed to be called inside event-filter functions, so
+that a single filter can trigger a set of multiple child
+events based on the processing result inside the filter
+function.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example, a
+filter function can be a string-pattern matching function
+that finds for multiple possible patterns. According to the
+pattern-matching result, it can trigger multiple child
+events that corresponds to each pattern. In this case,
+<b>mtcp_raise_event</b>() can be called multiple times
+inside the filter function for each pattern found in the
+given string.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Returns 0 on
+success. When the given <i>child_event</i> parameter points
+to any event that is undefined or invalid (not the one
+created via <b>mtcp_alloc_event()</b> ), it fails and
+returns -1.</p>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mOS development
+team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_alloc_event</b>(),
+<b>mtcp_define_event</b>()</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of mOS release 0.3 <i>docs</i> section. A description
+of the project, and information about reporting bugs, can be
+found at http://mos.kaist.edu/.</p>
+<hr>
+<div class="footer">
+  <img src="back-arrow.jpg" width="2%" height="2%"><a href="http://mos.kaist.edu/index_man.html">Back to Index</a>
+</div>
+</div>
+</body>
+</html>

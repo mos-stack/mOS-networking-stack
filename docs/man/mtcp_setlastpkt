@@ -1,0 +1,133 @@
+.TH mtcp_setlastpkt 3 2017-08-28 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_setlastpkt \- modifies the last Ethernet frame of a monitoring flow
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "ssize_t mtcp_setlastpkt(mctx_t " mctx ", int " sockid ", int " side ", off_t " offset ", byte * " data ", uint16_t " datalen ", int " option  );
+
+.SH DESCRIPTION
+
+.BR mtcp_setlastpkt ()
+updates the last Ethernet frame for a given flow observed by the stack.
+The user can specify the flow and direction with the socket descriptor
+.I "sockid"
+and the
+.I "side"
+argument (MOS_SIDE_CLI or MOS_SIDE_SVR)
+to specify the Ethernet frame of her choosing to be modified.
+
+The
+.I "option"
+argument can be used to define which action should be performed on the packet.
+The value of
+.I "option"
+should be the logical disjunction of 
+action to perform (MOS_DROP or MOS_OVERWRITE),
+position for modification (MOS_ETH_HDR or MOS_IP_HDR or MOS_TCP_HDR
+or MOS_TCP_PAYLOAD), and checksum operation to perform
+(MOS_UPDATE_IP_CHKSUM or MOS_UPDATE_TCP_CHKSUM).
+It allows modifying the	packet contents
+as long as the overall TCP payload size is not changed.
+
+
+.TP 12
+.B MOS_DROP
+Drop the last Ethernet frame. This option ignores any other
+flags in the
+.I "option"
+parameter.
+
+.TP 12
+.B MOS_OVERWRITE
+Overwrite some data onto the specific header or payload (MOS_ETH_HDR or
+MOS_IP_HDR or MOS_TCP_HDR or MOS_TCP_PAYLOAD) of the last Ethernet frame.
+The user can specify the offset from where the data should be written (
+.I "offset"
+), the data buffer that contains the data to be written (
+.I "data"
+), and the bytes in the data buffer (
+.I "datalen"
+).
+
+Here are some restrictions on the
+.I "option"
+field: (a) MOS_DROP and MOS_OVERWRITE are mutually
+exclusive parameters, but one of them should be specified in the
+.I "option"
+field.
+(b) MOS_DROP ignores any other flags in the
+.I "option"
+parameter.
+(c) MOS_ETH_HDR, MOS_IP_HDR, MOS_TCP_HDR, and MOS_TCP_PAYLOAD are mutually
+exclusive parameters, but one of them should be specified in the
+.I "option"
+field.
+
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+
+Returns 0 on success. On all errors, -1 is returned and
+.I "errno"
+is set appropriately.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 18
+.B "EACCES"
+The
+.I "mctx"
+argument is invalid.
+
+.TP 18
+.B "EBADF"
+The socket descriptor
+.I "sockid"
+is invalid.
+
+.TP 18
+.B "EINVAL"
+The buffer management of the monitoring socket with
+.I "sockid"
+was already disabled.
+
+.TP 18
+.B "ESOCKTNOSUPPORT"
+The socket referred to by
+.I "sockid"
+has invalid
+.I "type"
+
+.TP 18
+.B "ENOTCONN"
+Th socket referred to by
+.I "sockid"
+is in a TCP state that disallows read operations.
+
+.TP 18
+.B "ENODATA"
+The socket referred to by
+.I "sockid"
+does not have any available bytes in its buffer
+for reading.
+
+.TP 18
+.B "EPERM"
+The caller is not permitted
+to access this function.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_getlastpkt (),
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

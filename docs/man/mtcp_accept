@@ -115,7 +115,7 @@ connection (till
 .BR mtcp_close()).
 .\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 .SH AUTHORS
-mTCP development team <mtcp-user@list.ndsl.kaist.edu>
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
 .\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 .SH SEE ALSO
 .BR mtcp_bind (),

@@ -1,0 +1,105 @@
+.TH mtcp_sendpkt 3 2017-08-27 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_sendpkt \- Sends a self-constructed TCP packet to network
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "int mtcp_sendpkt(mctx_t " mctx ", int " sockid ", struct pkt_info *" pinfo );
+
+.SH DESCRIPTION
+.BR mtcp_sendpkt () 
+sends a self-constructed TCP packet for a given flow to network.
+The user can select the socket descriptor using
+.I "sockid"
+and the
+.I "pinfo"
+points to an instance of
+.BR struct 
+pkt_info that is allocated and filled by the user via mtcp_getlastpkt() function.
+It is the user's responsibility to allocate the
+.I "pkt_info"
+structure before the function call, and
+free the
+.I "pkt_info"
+after the function call.
+The structure is defined as:
+.PP
+ struct pkt_info {
+ 	// pkt recving time
+ 	uint32_t cur_ts;
+ 	// ETH
+ 	uint16_t eth_len;
+ 	// IP
+ 	uint16_t ip_len;
+ 	//TCP
+ 	uint64_t offset; // TCP recv buffer offset
+ 	uint16_t payloadlen;
+ 	uint32_t seq;
+ 	uint32_t ack_seq;
+ 	uint16_t window;
+
+	struct ethhdr *ethh;
+ 	struct iphdr *iph;
+ 	struct tcphdr *tcph;
+ 	uint8_t *payload;
+ 	
+ }
+.PP
+A successful call to
+.BR mtcp_sendpkt()
+constructs a TCP packet based on the given packet information
+.I "pinfo"
+and send the packet to the network.
+
+An 
+.BR mtcp_sendpkt()
+call takes an additional argument named 
+.I "mctx"
+that represents the per-core mTCP context in an application
+(see
+.BR mtcp_create_context()
+for details).
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns 0 on success; -1 on failure. In case
+of failure,
+.I "errno"
+is set appropriately. 
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 15
+.B "EACCES"
+.I "mctx"
+is invalid, or
+.I "pinfo"
+is NULL.
+
+.TP 15
+.B "ENODATA"
+The packet information does not contain a valid IP header or
+TCP header information. This normally does not occur when
+we put the result of the
+.BR "mtcp_sendpkt()"
+function. Therefore, it means that the user modified the
+packet information inappropriately.
+
+
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_create_context (),
+.BR mtcp_setlastpkt (),
+.BR mtcp_socket (),
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""

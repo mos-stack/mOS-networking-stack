@@ -1,0 +1,214 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!-- CreationDate: Mon Aug 28 02:48:47 2017 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>mtcp_define_event</title>
+<link rel="stylesheet" href="./common.css">
+</head>
+<body>
+<div class="main">
+<h1 align="center">mtcp_define_event</h1>
+<!--
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+-->
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">mtcp_define_event
+&minus; define a user-defined event function</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;mos_api.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mtcp_define_event(event_t</b> <i>event</i><b>, filter_t</b>
+<i>filter</i><b>, struct filter_arg *</b> <i>arg</i>
+<b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_define_event</b>()
+creates a new user-defined event (UDE) with a base event
+<i>event</i> and a filter function <i>filter</i> with a
+filter argument <i>arg</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">More
+specifically, a UDE is defined as a based event and a
+boolean filter function that determines the event condition.
+When the base event for a UDE is raised, mOS triggers the
+UDE only when the filter function is evaluated to be
+true.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>event</i>
+argument is a typedef&rsquo;ed uint64_t integer. It can be
+either a built-in event or a user-defined event. mOS
+provides the following built-in events that a user can
+employ:</p>
+
+
+<p align="center" style="margin-top: 1em">
+  <table align="center" border="1" class="docutils">
+	<colgroup>
+	  <col width="40%" />
+	  <col width="60%" />
+	</colgroup>
+	<tbody valign="top">
+	  <tr class="row-odd"><td>Built-in event</td>
+		<td>Description</td>
+	  </tr>
+	  <tr class="row-even"><td><code class="docutils literal"><span class="pre">MOS_ON_PKT_IN</span></code></td>
+		<td>In-flow TCP packet arrival</td>
+	  </tr>
+	  <tr class="row-odd"><td><code class="docutils literal"><span class="pre">MOS_ON_CONN_START</span></code></td>
+		<td>New connection initiation</td>
+	  </tr>
+	  <tr class="row-even"><td><code class="docutils literal"><span class="pre">MOS_ON_REXMIT</span></code></td>
+		<td>TCP retransmission</td>
+	  </tr>
+	  <tr class="row-odd"><td><code class="docutils literal"><span class="pre">MOS_ON_TCP_STATE_CHANGE</span></code></td>
+		<td>TCP state change</td>
+	  </tr>
+	  <tr class="row-even"><td><code class="docutils literal"><span class="pre">MOS_ON_CONN_END</span></code></td>
+		<td>Connection termination</td>
+	  </tr>
+	  <tr class="row-odd"><td><code class="docutils literal"><span class="pre">MOS_ON_CONN_NEW_DATA</span></code></td>
+		<td>New flow payload</td>
+	  </tr>
+	  <tr class="row-even"><td><code class="docutils literal"><span class="pre">MOS_ON_ORPHAN</span></code></td>
+		<td>non-TCP packet</td>
+	  </tr>
+	  <tr class="row-odd"><td><code class="docutils literal"><span class="pre">MOS_ON_ERROR</span></code></td>
+		<td>Error report (e.g., receive buffer full)</td>
+	  </tr>
+	</tbody>
+	</table>
+</p>
+
+<p style="margin-left:11%; margin-top: 1em">A typical usage
+of <b>mtcp_define_event()</b> is illustrated below:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">/*************************************************/
+<br>
+// creates a passive monitoring socket with its scope <br>
+s = mtcp_socket(m, AF_INET, MOS_SOCK_MONITOR_STREAM, 0);
+<br>
+ft.stream_syn_filter = &quot;dst net 216.58 and dst port
+80&quot;; <br>
+mtcp_bind_monitor_filter(m, s, &amp;ft);</p>
+
+<p style="margin-left:11%; margin-top: 1em">// defines a
+user-defined event that detects an HTTP request <br>
+hev = mtcp_define_event(MOS_ON_CONN_NEW_DATA, IsHTTPRequest,
+NULL); <br>
+/*************************************************/</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Returns 0 on
+success; -1 on failure.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EINVAL</b></p></td>
+<td width="14%"></td>
+<td width="63%">
+
+
+<p style="margin-top: 1em">The socket descriptor,
+<i>sockid</i> is invalid.</p></td>
+<td width="3%">
+</td></tr>
+</table>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+<!----------------------------------------------------------->
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+<p style="margin-left:11%; margin-top: 1em">
+  <a href="http://mos.kaist.edu/guide/programmer/05_api_example.html#registering-for-user-defined-events-udes">
+	http://mos.kaist.edu/guide/programmer/05_api_example.html#registering-for-user-defined-events-udes
+	</a>
+</p>
+<!----------------------------------------------------------->
+
+<p style="margin-left:11%; margin-top: 1em">mOS development
+team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtcp_socket</b>(),
+<b>mtcp_bind_monitor_filter</b>(),
+<b>mtcp_register_callback</b>()</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of mOS release 0.3 <i>docs</i> section. A description
+of the project, and information about reporting bugs, can be
+found at http://mos.kaist.edu/.</p>
+<hr>
+<div class="footer">
+  <img src="back-arrow.jpg" width="2%" height="2%"><a href="http://mos.kaist.edu/index_man.html">Back to Index</a>
+</div>
+</div>
+</body>
+</html>

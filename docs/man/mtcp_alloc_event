@@ -1,0 +1,66 @@
+.TH mtcp_alloc_event 3 2017-08-28 "Linux" "mOS Library Functions Manual"
+.SH NAME
+mtcp_alloc_event \- define a follow-up event for a filter that can trigger multiple (child) events
+.SH SYNOPSIS
+.B #include <mos_api.h>
+.sp
+.BI "event_t mtcp_alloc_event(event_t " parent_event );
+
+.SH DESCRIPTION
+.BR mtcp_alloc_event ()
+allocates a new child event that can be triggered by a filter.
+On success, it returns a child event that can be triggered
+inside the filter functions registered on
+.I "parent_event"
+.
+
+This function allows a single filter to trigger a set of
+multiple child events based on the processing result inside
+the filter function. More specifically, a user can call this function
+to pre-allocate a child user-defined event when initializing mOS events,
+providing its parent event
+.I "parent_event"
+. When the parent event is triggered, the filter functions
+registered to the parent event are triggered. The filter
+function, based on its result, can trigger the child event
+created with
+.B "mtcp_alloc_event () "
+using the
+.B "mtcp_raise_event () "
+function.
+
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+Returns 
+.I "event_t"
+on success;
+.I "MOS_NULL_EVENT" on failure.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\""""".SH CONFORMING TO
+.\"""""POSIX.1-2001.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP 15
+This function returns
+.I "MOS_NULL_EVENT"
+when the given
+.I "parent_event"
+is not defined or cannot allocate more
+.I "event_t"
+structure.
+
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH AUTHORS
+mOS development team <mtcp-user@list.ndsl.kaist.edu>
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR mtcp_raise_event (),
+.BR mtcp_define_event ()
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH COLOPHON
+This page is part of mOS release 0.3
+.I "docs"
+section. A description of the project, and information
+about reporting bugs, can be found at
+\%http://mos.kaist.edu/.
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""
