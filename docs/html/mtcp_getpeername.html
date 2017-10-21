@@ -72,13 +72,22 @@ pointed to by <i>addr.</i> On return it contains the actual
 size of the socket address.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><i>side</i>
-variable should be properly set (either MOS_SIDE_CLI or
-MOS_SIDE_SVR) to specify on which side this function is
-  interested in.</p>
+  variable should be properly set to specify on which side
+  this function is interested in.</p>
 
-<p style="margin-left:11%; margin-top: 1em">If <i>addrlen</i>
-argument is set to be <i>2 * sizeof(struct sockaddr)</i>,
-it will fill up the socket address of the other side as well.
+<p style="margin-left:11%; margin-top: 1em">If <i>side</i>
+  argument is set to have <i>MOS_SIDE_CLI</i> or <i>MOS_SIDE_SVR</i>,
+  <i>addrlen</i> should be <i>sizeof(struct sockaddr)</i>, and
+  it will fill up the address buffer at <i>addr</i>
+  with the address of the corresponding side.
+
+<p style="margin-left:11%; margin-top: 1em">
+  If <i>side</i> argument is set to have <i>MOS_SIDE_BOTH</i>,
+  <i>addrlen</i> should be <i>2 * sizeof(struct sockaddr)</i>
+  , and it will fill up the address buffer at <i>addr</i>
+  with the address of the corresponding side.
+  The client-side address can be referred as <i>addr[MOS_SIDE_CLI]</i>,
+  and the server-side can be referred as <i>addr[MOS_SIDE_SVR]</i>.
 </p>
 
 <p style="margin-left:11%; margin-top: 1em">An
@@ -160,6 +169,18 @@ have). Some POSIX confusion resulted in the present
 
 <p style="margin-left:11%; margin-top: 1em">mOS development
 team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
+
+<!----------------------------------------------------------->
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+<p style="margin-left:11%; margin-top: 1em">
+  <a href="http://mos.kaist.edu/guide/programmer/05_api_example.html#querying-end-point-host-address">
+	http://mos.kaist.edu/guide/programmer/05_api_example.html#querying-end-point-host-address
+	</a>
+</p>
+<!----------------------------------------------------------->
 
 <h2>SEE ALSO
 <a name="SEE ALSO"></a>

@@ -87,11 +87,16 @@ needs to peek the client (MOS_SIDE_CLI) or server
 
 
 <p style="margin-left:11%; margin-top: 1em">On success, the
-number of bytes read is returned. It is not an error if this
-number is smaller than the number of bytes requested; this
-may happen when the socket has fewer number of bytes
-buffered at that moment. On all errors, -1 is returned and
-<i>errno</i> is set appropriately.</p>
+  number of bytes read is returned. It is not an error if this
+  number is smaller than the number of bytes requested; this
+  may happen when the socket has fewer number of bytes
+  buffered at that moment.  On all errors except <i>ENODATA</i>,
+  -1 is returned and <i>errno</i> is set appropriately.
+  On <i>ENODATA</i> error, if the buffer outrun was occured,
+  it would return <i>(-1) * (the number of bytes overwritten
+	on the buffer)</i>.
+</p>
+
 
 <h2>ERRORS
 <a name="ERRORS"></a>
@@ -212,6 +217,20 @@ position.</p>
 
 <p style="margin-left:11%; margin-top: 1em">mOS development
 team &lt;mtcp-user@list.ndsl.kaist.edu&gt;</p>
+
+
+<!----------------------------------------------------------->
+<h2>EXAMPLES
+  <a name="EXAMPLES"></a>
+</h2>
+
+<p style="margin-left:11%; margin-top: 1em">
+  <a href="http://mos.kaist.edu/guide/programmer/05_api_example.html#monitoring-reassembled-tcp-payload">
+	http://mos.kaist.edu/guide/programmer/05_api_example.html#monitoring-reassembled-tcp-payload
+  </a>
+</p>
+<!----------------------------------------------------------->
+
 
 <h2>SEE ALSO
 <a name="SEE ALSO"></a>

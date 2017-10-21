@@ -22,15 +22,38 @@ argument should be initialized to indicate the amount of space
 On return it contains the actual size of the socket address.
 
 .I "side"
-variable should be properly set (either MOS_SIDE_CLI or MOS_SIDE_SVR)
+variable should be properly set
 to specify on which side this function is interested in.
 
 If
-.I "addrlen"
+.I "side"
 argument is set to have
-.I "2 * sizeof(struct sockaddr)"
+.I "MOS_SIDE_CLI"
+or 
+.I "MOS_SIDE_SVR"
 ,
-it will fill up the socket address of the other side as well.
+.I "addrlen"
+should be
+.I "sizeof(struct sockaddr)"
+, and it will fill up the address buffer at
+.I "addr"
+with the address of the corresponding side.
+
+If
+.I "side"
+argument is set to have
+.I "MOS_SIDE_BOTH"
+,
+.I "addrlen"
+should be
+.I "2 * sizeof(struct sockaddr)"
+, and it will fill up the address buffer at
+.I "addr"
+with the address of the corresponding side. The client-side address can be referred as
+.I "addr[MOS_SIDE_CLI]"
+, and the server-side can be referred as
+.I "addr[MOS_SIDE_SVR]"
+.
 
 An 
 .BR mtcp_getpeername ()

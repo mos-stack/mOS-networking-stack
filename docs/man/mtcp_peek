@@ -43,9 +43,17 @@ that informs the stack whether it needs to peek the client
 On success, the number of bytes read is returned. It is not
 an error if this number is smaller than the number of bytes
 requested; this may happen when the socket has fewer number of
-bytes buffered at that moment. On all errors, -1 is returned and
+bytes buffered at that moment.
+On all errors except
+.I "ENODATA",
+-1 is returned and
 .I "errno"
 is set appropriately.
+On
+.I "ENODATA"
+error, if the buffer outrun was occured, it would return
+.I "(-1) * (the number of bytes overwritten on the buffer)"
+.
 .\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 .SH ERRORS
 .TP 10
