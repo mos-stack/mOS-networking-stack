@@ -80,7 +80,7 @@ cb_creation(mctx_t mctx, int sock, int side, uint64_t events, filter_arg_t *arg)
 	/* Fill values of the connection structure */
 	c->sock = sock;
 	if (mtcp_getpeername(mctx, c->sock, (void *)c->addrs, &addrslen,
-						 MOS_SIDE_CLI) < 0) {
+						 MOS_SIDE_BOTH) < 0) {
 		perror("mtcp_getpeername");
 		/* it's better to stop here and do debugging */
 		exit(EXIT_FAILURE); 

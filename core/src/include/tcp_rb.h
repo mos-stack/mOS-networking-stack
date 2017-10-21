@@ -98,6 +98,9 @@ tcprb_resize(tcprb_t *rb, int len);
 extern inline int
 tcprb_ffhead(tcprb_t *rb, int len);
 
+inline int
+tcprb_fflen(tcprb_t *rb, uint8_t *buf, int len, loff_t off);
+
 extern inline int
 tcprb_ppeek(tcprb_t *rb, uint8_t *buf, int len, loff_t off);
 

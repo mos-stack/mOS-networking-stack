@@ -64,7 +64,7 @@ assign_port(mctx_t mctx, int sock)
 
 	/* remove a NAT mapping for this connection */
 	if (mtcp_getpeername(mctx, sock, (struct sockaddr *)&addr, &len,
-						 MOS_SIDE_CLI) < 0) {
+						 MOS_SIDE_BOTH) < 0) {
 		TRACE_ERROR("mtcp_getpeer() failed for sock=%d\n", sock);
 		return;
 	}
@@ -140,7 +140,7 @@ translate_addr(mctx_t mctx, int sock, int side, uint64_t events,
 		socklen_t len = sizeof(addr) * 2;
 
 		if (mtcp_getpeername(mctx, sock, (struct sockaddr *)&addr, &len,
-					MOS_SIDE_CLI) < 0) {
+					MOS_SIDE_BOTH) < 0) {
 			TRACE_ERROR("mtcp_getpeer() failed sock=%d side=%d\n", sock, side);
 			return;
 		}

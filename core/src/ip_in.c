@@ -44,11 +44,6 @@ ProcessInIPv4Packet(mtcp_manager_t mtcp, struct pkt_ctx *pctx)
 		goto __return;
 	}
 
-	if (ip_fast_csum(iph, iph->ihl)) {
-		ret = ERROR;
-		goto __return;
-	}
-
 	if (iph->version != IPVERSION ) {
 		release = true;
 		ret = FALSE;
@@ -56,6 +51,30 @@ ProcessInIPv4Packet(mtcp_manager_t mtcp, struct pkt_ctx *pctx)
 	}
 
 	FillInPacketIPContext(pctx, iph, ip_len);
+
+	/* callback for monitor raw socket */
+	TAILQ_FOREACH(walk, &mtcp->monitors, link)
+		if (walk->socket->socktype == MOS_SOCK_MONITOR_RAW) {
+			if (ISSET_BPFFILTER(walk->raw_pkt_fcode) &&
+				EVAL_BPFFILTER(walk->raw_pkt_fcode, (uint8_t *)pctx->p.ethh,
+							   pctx->p.eth_len))
+				HandleCallback(mtcp, MOS_NULL, walk->socket, MOS_SIDE_BOTH,
+							   pctx, MOS_ON_PKT_IN);
+		}
+
+	/* if there is no MOS_SOCK_STREAM or MOS_SOCK_MONITOR_STREAM socket,
+	   forward IP packet before reaching upper (transport) layer */
+	if (mtcp->num_msp == 0 && mtcp->num_esp == 0) {
+		if (pctx->forward) {
+			ForwardIPPacket(mtcp, pctx);
+		}
+		return TRUE;
+	}		
+	
+	if (ip_fast_csum(iph, iph->ihl)) {
+		ret = ERROR;
+		goto __return;
+	}
 
 	switch (iph->protocol) {
 		case IPPROTO_TCP:
@@ -75,11 +94,6 @@ ProcessInIPv4Packet(mtcp_manager_t mtcp, struct pkt_ctx *pctx)
 	}
 
 __return:
-	/* callback for monitor raw socket */
-	TAILQ_FOREACH(walk, &mtcp->monitors, link)
-		if (walk->socket->socktype == MOS_SOCK_MONITOR_RAW)
-			HandleCallback(mtcp, MOS_NULL, walk->socket, MOS_SIDE_BOTH,
-				       pctx, MOS_ON_PKT_IN);
 	if (release && mtcp->iom->release_pkt)
 		mtcp->iom->release_pkt(mtcp->ctx, pctx->p.in_ifidx,
 				       (unsigned char *)pctx->p.ethh, pctx->p.eth_len);

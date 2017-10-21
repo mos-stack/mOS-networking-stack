@@ -117,6 +117,8 @@ struct app_ops
 	/** Function contains code which will be executed after initialization
 	 * phase */
 	void (*run)(mctx_t mctx, void **app_ctx);
+	/* is the application enabled at the moment? */
+	int enable;
 };
 
 
@@ -382,7 +384,7 @@ mtcp_recv(mctx_t mctx, int sockid, char *buf, size_t len, int flags);
 /** Read byte stream from flow, same as `read()`
  * @return number of bytes read on success, -1 on error
  */
-inline ssize_t
+ssize_t
 mtcp_read(mctx_t mctx, int sock, char *buf, size_t len);
 
 /* readv should work in atomic */

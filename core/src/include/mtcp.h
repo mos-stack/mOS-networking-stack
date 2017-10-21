@@ -240,7 +240,8 @@ struct mtcp_manager
 
 	struct tcp_listener *listener;
 	TAILQ_HEAD(, mon_listener) monitors;
-	int num_msp;                    /* # of MOS_SOCK_MONITOR_STREAM */
+	uint32_t num_msp;               /* # of MOS_SOCK_MONITOR_STREAM */
+	uint32_t num_esp;               /* # of MOS_SOCK_STREAM */
 	struct pkt_ctx *pctx;			/* current pkt context */
 
 	stream_queue_t connectq;				/* streams need to connect */

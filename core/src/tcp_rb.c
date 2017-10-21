@@ -479,6 +479,36 @@ tcprb_ffhead(tcprb_t *rb, int len)
 	return ff;
 }
 /*--------------------------------------------------------------------------*/
+/* return the number of bytes that would be fast forwarded */
+inline int
+tcprb_fflen(tcprb_t *rb, uint8_t *buf, int len, loff_t off)
+{	
+	if (!rb || !buf || len < 0 ||
+		off < rb->head || off >= rb->pile + rb->metalen)
+		return -1;
+	/* nothing to write or already written */
+	else if (len == 0 || off + len < rb->pile)
+		return 0;
+
+	int ff = (off + len) - (rb->head + MIN(rb->len, rb->metalen));
+	if (ff <= 0)
+		return 0;
+
+	tcpfrag_t *cf = TAILQ_FIRST(&rb->frags); /* contiguous buffer seg. */
+
+	if (!cf || (cf->head != rb->head))
+		/* No contiguous buffer seg. to traverse */
+		return 0;
+
+	int cflen = cf->tail - cf->head; /* length of cf */
+	assert(cflen > 0);
+
+	int fflen = MIN(len, cflen);
+	fflen = MIN(ff, rb->pile - rb->head); /* head cannot go further than pile */
+
+	return fflen;
+}
+/*--------------------------------------------------------------------------*/
 static inline int
 tcprb_get_datalen(tcprb_t *rb)
 {
@@ -602,14 +632,14 @@ inline int
 tcprb_pwrite(tcprb_t *rb, uint8_t *buf, int len, loff_t off)
 {
 	int ff, olen;
-	loff_t efhead = -1;  /* head of empty fragment */
+	loff_t efhead = -1;      /* head of empty fragment */
 	int eflen = 0;           /* length of empty fragment */
 
-	/* pwrite() will not overwrite old data with new data.
-	 * However, */
-
+	/*
+	 * we don't raise MOS_ON_ERROR anymore here,
+	 * (out of receive buffer case is handled at ProcessTCPPayload())
+	 */
 	if (!rb || !buf || len < 0 ||
-		/* out of window range */
 		off < rb->head || off >= rb->pile + rb->metalen)
 		return -1;
 	else if (len == 0)
@@ -617,11 +647,10 @@ tcprb_pwrite(tcprb_t *rb, uint8_t *buf, int len, loff_t off)
 	else if (off + len < rb->pile) /* already written */
 		return len;
 
-	/* move head */
+	/* check whether we should move its head offset (fast forward) */
 	olen = len;
 	if ((ff = (off + len) - (rb->head + MIN(rb->len, rb->metalen))) > 0)
 		len -= ff - tcprb_ffhead(rb, ff);
-
 	if (rb->metalen > rb->len)
 		eflen = MIN(olen - len, rb->metalen - rb->len);
 	if (eflen)
@@ -880,11 +909,19 @@ tcp_rb_overlapchk(mtcp_manager_t mtcp, struct pkt_ctx *pctx,
 				 * call it immediately (before pkt payload is attached
 				 * to the tcp ring buffer)
 				 */
-				SOCKQ_FOREACH_START(walk, &recvside_stream->msocks) {
-					HandleCallback(mtcp, MOS_HK_RCV, walk,
-						       recvside_stream->side,
-						       pctx, MOS_ON_REXMIT);
-				} SOCKQ_FOREACH_END;
+				if (recvside_stream->side == MOS_SIDE_CLI) {
+					SOCKQ_FOREACH_REVERSE(walk, &recvside_stream->msocks) {
+						HandleCallback(mtcp, MOS_HK_RCV, walk,
+							       recvside_stream->side,
+							       pctx, MOS_ON_REXMIT);
+					} SOCKQ_FOREACH_END;
+				} else { /* recvside_stream->side == MOS_SIDE_SVR */
+					SOCKQ_FOREACH_START(walk, &recvside_stream->msocks) {
+						HandleCallback(mtcp, MOS_HK_RCV, walk,
+							       recvside_stream->side,
+							       pctx, MOS_ON_REXMIT);
+					} SOCKQ_FOREACH_END;
+				}
 				/* recvside_stream->cb_events |= MOS_ON_REXMIT; */
 				TRACE_DBG("RETX!\n");
 				break;

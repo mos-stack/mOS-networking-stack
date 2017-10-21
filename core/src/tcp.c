@@ -294,6 +294,7 @@ UpdateMonitor(mtcp_manager_t mtcp, struct tcp_stream *sendside_stream,
 	ClonePacketCtx(&sendside_stream->last_pctx.p,
 		       sendside_stream->last_pkt_data, &(pctx.p));
 #endif
+
 	/* update send stream context first */
 	if (sendside_stream->status_mgmt) {
 		sendside_stream->cb_events = MOS_ON_PKT_IN;
@@ -303,10 +304,17 @@ UpdateMonitor(mtcp_manager_t mtcp, struct tcp_stream *sendside_stream,
 
 		sendside_stream->allow_pkt_modification = true;
 		/* POST hook of sender */
-		SOCKQ_FOREACH_START(walk, &sendside_stream->msocks) {
-			HandleCallback(mtcp, MOS_HK_SND, walk, sendside_stream->side,
-				       pctx, sendside_stream->cb_events);
-		} SOCKQ_FOREACH_END;
+		if (sendside_stream->side == MOS_SIDE_CLI) {
+			SOCKQ_FOREACH_START(walk, &sendside_stream->msocks) {
+				HandleCallback(mtcp, MOS_HK_SND, walk, sendside_stream->side,
+					       pctx, sendside_stream->cb_events);
+			} SOCKQ_FOREACH_END;
+		} else { /* sendside_stream->side == MOS_SIDE_SVR */
+			SOCKQ_FOREACH_REVERSE(walk, &sendside_stream->msocks) {
+				HandleCallback(mtcp, MOS_HK_SND, walk, sendside_stream->side,
+					       pctx, sendside_stream->cb_events);
+			} SOCKQ_FOREACH_END;			
+		}
 		sendside_stream->allow_pkt_modification = false;
 	}
 
@@ -348,10 +356,17 @@ UpdateMonitor(mtcp_manager_t mtcp, struct tcp_stream *sendside_stream,
 			UpdatePassiveRecvTCPContext(mtcp, recvside_stream, pctx);
 
 		/* POST hook of receiver */
-		SOCKQ_FOREACH_START(walk, &recvside_stream->msocks) {
-			HandleCallback(mtcp, MOS_HK_RCV, walk, recvside_stream->side,
-				       pctx, recvside_stream->cb_events);
-		} SOCKQ_FOREACH_END;
+		if (recvside_stream->side == MOS_SIDE_CLI) {
+			SOCKQ_FOREACH_REVERSE(walk, &recvside_stream->msocks) {
+				HandleCallback(mtcp, MOS_HK_RCV, walk, recvside_stream->side,
+					       pctx, recvside_stream->cb_events);
+			} SOCKQ_FOREACH_END;
+		} else { /* recvside_stream->side == MOS_SIDE_SVR */
+			SOCKQ_FOREACH_START(walk, &recvside_stream->msocks) {
+				HandleCallback(mtcp, MOS_HK_RCV, walk, recvside_stream->side,
+					       pctx, recvside_stream->cb_events);
+			} SOCKQ_FOREACH_END;			
+		}
 	}
 	
 	/* reset callback events counter */
@@ -373,7 +388,7 @@ HandleMonitorStream(mtcp_manager_t mtcp, struct tcp_stream *sendside_stream,
 		/* forward packets */
 		if (pctx->forward)
 			ForwardIPPacket(mtcp, pctx);
-		
+
 		if (recvside_stream->stream_type == sendside_stream->stream_type &&
 		    IS_STREAM_TYPE(recvside_stream, MOS_SOCK_MONITOR_STREAM_ACTIVE)) {
 			if (((recvside_stream->state == TCP_ST_TIME_WAIT &&
@@ -386,7 +401,7 @@ HandleMonitorStream(mtcp_manager_t mtcp, struct tcp_stream *sendside_stream,
 			     !sendside_stream->status_mgmt))
 
 				DestroyTCPStream(mtcp, recvside_stream);
-			}
+		}
 	}
 }
 /*----------------------------------------------------------------------------*/
@@ -455,7 +470,7 @@ ProcessInTCPPacket(mtcp_manager_t mtcp, struct pkt_ctx *pctx)
 					pctx->p.seq, cur_stream->rcvvar->irs + 1);
 
 		if (IS_STREAM_TYPE(cur_stream, MOS_SOCK_STREAM))
-			HandleSockStream(mtcp, cur_stream, pctx);			
+			HandleSockStream(mtcp, cur_stream, pctx);
 		
 		else if (HAS_STREAM_TYPE(cur_stream, MOS_SOCK_MONITOR_STREAM_ACTIVE))
 			HandleMonitorStream(mtcp, cur_stream, cur_stream->pair_stream, pctx);
@@ -487,7 +502,8 @@ ProcessInTCPPacket(mtcp_manager_t mtcp, struct pkt_ctx *pctx)
 				/* Send RST if it is run as EndTCP only mode */
 				SendTCPPacketStandalone(mtcp,
 							iph->daddr, tcph->dest, iph->saddr, tcph->source,
-							0, pctx->p.seq + pctx->p.payloadlen + 1, 0, TCP_FLAG_RST | TCP_FLAG_ACK,
+							0, pctx->p.seq + pctx->p.payloadlen + 1, 0,
+							TCP_FLAG_RST | TCP_FLAG_ACK,
 							NULL, 0, pctx->p.cur_ts, 0, 0, -1);
 		} else if (pctx->forward) {
 			/* Do forward or drop if it run as Monitor only mode */

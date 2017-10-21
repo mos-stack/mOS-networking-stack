@@ -29,7 +29,6 @@ ProcessPacket(mtcp_manager_t mtcp, const int ifidx, const int index,
 		uint32_t cur_ts, unsigned char *pkt_data, int len)
 {
 	struct pkt_ctx pctx;
-	struct mon_listener *walk;
 	struct ethhdr *ethh = (struct ethhdr *)pkt_data;
 	int ret = -1;
 	u_short h_proto = ntohs(ethh->h_proto);
@@ -58,12 +57,7 @@ ProcessPacket(mtcp_manager_t mtcp, const int ifidx, const int index,
 		/* process ipv4 packet */
 		ret = ProcessInIPv4Packet(mtcp, &pctx);
 	} else {
-		/* callback for monitor raw socket */
-		TAILQ_FOREACH(walk, &mtcp->monitors, link)
-			if (walk->socket->socktype == MOS_SOCK_MONITOR_RAW)
-				HandleCallback(mtcp, MOS_NULL, walk->socket, MOS_SIDE_BOTH,
-					       &pctx, MOS_ON_PKT_IN);
-		
+
 		/* drop the packet if forwarding is off */
 		if (!mtcp->num_msp || !pctx.forward) {
 #ifdef RUN_ARP

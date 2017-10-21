@@ -7,9 +7,11 @@
 
 #include "mtcp.h"
 #include "mos_api.h"
+#include "util.h"
 #include "debug.h"
 #include "config.h"
 #include "ip_in.h"
+#include "ip_out.h"
 #include "tcp_out.h"
 /*----------------------------------------------------------------------------*/
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
@@ -290,9 +292,20 @@ mtcp_peek(mctx_t mctx, int msock, int side, char *buf, size_t len)
 
 		rc = tcprb_ppeek(rcvbuf, (uint8_t *)buf, len, *poff);
 		if (rc < 0) {
+			if (*poff >= rcvbuf->head) {
+				/* this should not happen */
+				TRACE_ERROR("tcprb_ppeek() failed\n");
+				exit(EXIT_FAILURE);
+			}
+			/*
+			 * if we already missed some bytes to read, 
+			 * return (the number of bytes missed) * (-1)
+			 */
+			int missed = rcvbuf->head - *poff;
+			*poff = rcvbuf->head;
 			errno = ENODATA;
-			return -1;
-		}
+			return -1 * missed;
+		}		
 
 		*poff += rc;
 		UNUSED(copylen);
@@ -531,6 +544,12 @@ mtcp_getlastpkt(mctx_t mctx, int sock, int side, struct pkt_ctx **pctx)
 	return 0;
 }
 #endif
+/*----------------------------------------------------------------------------*/
+void
+mtcp_clonepkt(struct pkt_info *to, unsigned char *frame, struct pkt_info *from)
+{
+	ClonePacketCtx(to, frame, from);
+}
 /*----------------------------------------------------------------------------*/
 int
 mtcp_sendpkt(mctx_t mctx, int sock, const struct pkt_info *pkt)
@@ -859,46 +878,51 @@ mtcp_getpeername(mctx_t mctx, int sockfd, struct sockaddr *saddr,
 	sin = (struct sockaddr_in *)saddr;
 	rc = 0;
 
-	/* retrieve both streams */
 	stream = socket->monitor_stream->stream;
-
-	if (side != stream->side)
-		stream = stream->pair_stream;
-
 	if (stream == NULL) {
 		errno = ENOTCONN;
 		return -1;
 	}
 
-	/* reset to 2 * sizeof(struct sockaddr) if addrlen is too big */
-	if (*addrlen > 2 * sizeof(struct sockaddr))
-		*addrlen = 2 * sizeof(struct sockaddr);
-
-	/* according per manpage, address can be truncated */
-	switch (*addrlen) {
-	case (2 * sizeof(struct sockaddr)):
-	case TILL_CLIADDR:
-		sin[1].sin_addr.s_addr = stream->side == MOS_SIDE_SVR ?
-								 stream->daddr : stream->saddr;
-	case TILL_CLIPORT:
-		sin[1].sin_port = stream->side == MOS_SIDE_SVR ?
-						  stream->dport : stream->sport;
-	case TILL_CLIFAMILY:
-		sin[1].sin_family = AF_INET;
-	case (sizeof(struct sockaddr)):
-	case TILL_SVRADDR:
-		sin->sin_addr.s_addr = stream->side == MOS_SIDE_SVR ?
-							   stream->saddr : stream->daddr;
-	case TILL_SVRPORT:
-		sin->sin_port = stream->side == MOS_SIDE_SVR ?
-						stream->sport : stream->dport;
-	case TILL_SVRFAMILY:
+	switch (side) {
+	case MOS_SIDE_CLI:
+	case MOS_SIDE_SVR:
+		if (*addrlen != sizeof(struct sockaddr)) {
+			errno = EINVAL;
+			return -1;
+		}			
+		sin->sin_addr.s_addr = (stream->side == side) ?
+							   stream->daddr : stream->saddr;
+		sin->sin_port = (stream->side == side)?
+			            stream->dport : stream->sport;
 		sin->sin_family = AF_INET;
+
 		break;
+		
+	case MOS_SIDE_BOTH:
+		if (*addrlen != 2 * sizeof(struct sockaddr)) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		sin[MOS_SIDE_CLI].sin_addr.s_addr = (stream->side == MOS_SIDE_CLI) ?
+							   stream->daddr : stream->saddr;
+		sin[MOS_SIDE_CLI].sin_port = stream->side == MOS_SIDE_CLI ?
+						stream->dport : stream->sport;
+		sin[MOS_SIDE_CLI].sin_family = AF_INET;
+
+
+		sin[MOS_SIDE_SVR].sin_addr.s_addr = (stream->side == MOS_SIDE_SVR) ?
+							   stream->daddr : stream->saddr;
+		sin[MOS_SIDE_SVR].sin_port = stream->side == MOS_SIDE_SVR ?
+						stream->dport : stream->sport;
+		sin[MOS_SIDE_SVR].sin_family = AF_INET;
+
+		break;
+
 	default:
-		rc = -1;
-		*addrlen = 0xFFFF;
 		errno = EINVAL;
+		return -1;
 	}
 
 	return rc;

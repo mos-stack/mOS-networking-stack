@@ -457,11 +457,11 @@ CheckTimewaitExpire(mtcp_manager_t mtcp, uint32_t cur_ts, int thresh)
 				cnt, walk->s_id);
 		
 		if (walk->on_timewait_list) {
-                        /* wait until the other end is finished in monitoring socket */
-                        if ((walk->pair_stream != NULL)
-			    && (walk->pair_stream->state != TCP_ST_CLOSED_RSVD)
-			    && (walk->pair_stream->state != TCP_ST_TIME_WAIT))
-                                continue;
+			/* wait until the other end is finished in monitoring socket */
+			if ((walk->pair_stream != NULL)
+			     && (walk->pair_stream->state != TCP_ST_CLOSED_RSVD) 
+			     && (walk->pair_stream->state != TCP_ST_TIME_WAIT))
+				continue;
 
 			if ((int32_t)(cur_ts - walk->rcvvar->ts_tw_expire) >= 0) {
 				if (!walk->sndvar->on_control_list) {
@@ -584,7 +584,7 @@ int
 mtcp_settimer(mctx_t mctx, int id, struct timeval *timeout, callback_t cb)
 {
 	mtcp_manager_t mtcp = GetMTCPManager(mctx);
-	if (!mtcp)
+	if (!mtcp || !timeout || !cb)
 		return -1;
 
 	struct timer *t = NewTimer(mtcp, id, timeout, cb);

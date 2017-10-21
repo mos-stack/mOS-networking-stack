@@ -94,6 +94,7 @@ AllocateSocket(mctx_t mctx, int socktype)
 		break;
 
 	default:
+		mtcp->num_esp++;
 		socket = TAILQ_FIRST(&mtcp->free_smap);
 		if (!socket)
 			goto alloc_error;
@@ -150,6 +151,7 @@ FreeSocket(mctx_t mctx, int sockid, int socktype)
 		TAILQ_INSERT_TAIL(&mtcp->free_msmap, socket, link);
 		break;
 	default: /* MOS_SOCK_STREAM_* */
+		mtcp->num_esp--;
 		socket = &mtcp->smap[sockid];
 		TAILQ_INSERT_TAIL(&mtcp->free_smap, socket, link);
 		/* insert into free stream map */

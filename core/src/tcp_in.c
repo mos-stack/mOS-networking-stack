@@ -321,7 +321,6 @@ ProcessACK(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 	}
 	right_wnd_edge = sndvar->peer_wnd + cur_stream->rcvvar->snd_wl2;
 
-	/* If ack overs the sending buffer, return */
 	if (cur_stream->state == TCP_ST_FIN_WAIT_1 || 
 			cur_stream->state == TCP_ST_FIN_WAIT_2 ||
 			cur_stream->state == TCP_ST_CLOSING || 
@@ -332,6 +331,7 @@ ProcessACK(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 		}
 	}
 	
+	/* If ack overs the sending buffer, return */
 	if (TCP_SEQ_GT(ack_seq, sndvar->sndbuf->head_seq + sndvar->sndbuf->len)) {
 		TRACE_DBG("Stream %d (%s): invalid acknologement. "
 				"ack_seq: %u, possible max_ack_seq: %u\n", cur_stream->id, 
@@ -557,19 +557,29 @@ ProcessTCPPayload(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 		return FALSE;
 
 	/* if seq and segment length is lower than rcv_nxt, ignore and send ack */
-	if (TCP_SEQ_LT(pctx->p.seq + pctx->p.payloadlen, cur_stream->rcv_nxt)) {
-		SOCKQ_FOREACH_START(walk, &cur_stream->msocks) {
-			HandleCallback(mtcp, MOS_NULL, walk, cur_stream->side,
-				       pctx, MOS_ON_ERROR);
-		} SOCKQ_FOREACH_END;
+	if (TCP_SEQ_LT(pctx->p.seq + pctx->p.payloadlen, cur_stream->rcv_nxt))
 		return FALSE;
-	}
+
+	/*
+	TRACE_DEBUG("pctx->p.seq = %u, pctx->p.payloadlen = %d / cur_stream->rcv_nxt = %u, "
+	            "rcvvar->rcv_wnd = %u\n",
+				pctx->p.seq, pctx->p.payloadlen, cur_stream->rcv_nxt, rcvvar->rcv_wnd);
+	*/
+
 	/* if payload exceeds receiving buffer, drop and send ack */
 	if (TCP_SEQ_GT(pctx->p.seq + pctx->p.payloadlen, cur_stream->rcv_nxt + rcvvar->rcv_wnd)) {
-		SOCKQ_FOREACH_START(walk, &cur_stream->msocks) {
-			HandleCallback(mtcp, MOS_NULL, walk, cur_stream->side,
-				       pctx, MOS_ON_ERROR);
-		} SOCKQ_FOREACH_END;
+		/* MOS_ON_ERROR: payload outside the window arrives */
+		if (cur_stream->side == MOS_SIDE_CLI) {
+			SOCKQ_FOREACH_REVERSE(walk, &cur_stream->msocks) {
+				HandleCallback(mtcp, MOS_NULL, walk, cur_stream->side,
+					       pctx, MOS_ON_ERROR);
+			} SOCKQ_FOREACH_END;
+		} else { /* cur_stream->side == MOS_SIDE_SVR */
+			SOCKQ_FOREACH_START(walk, &cur_stream->msocks) {
+				HandleCallback(mtcp, MOS_NULL, walk, cur_stream->side,
+					       pctx, MOS_ON_ERROR);
+			} SOCKQ_FOREACH_END;
+		}
 		return FALSE;
 	}
 
@@ -605,15 +615,37 @@ ProcessTCPPayload(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 		if (!HAS_STREAM_TYPE(cur_stream, MOS_SOCK_STREAM) &&
 			HAS_STREAM_TYPE(cur_stream, MOS_SOCK_MONITOR_STREAM_ACTIVE))
 			tcprb_setpile(rb, rb->pile + tcprb_cflen(rb));
-		ret = tcprb_pwrite(rb, pctx->p.payload, pctx->p.payloadlen, off);
-		if (ret < 0) {
-			/* We try again after warning this result to the user. */
-			SOCKQ_FOREACH_START(walk, &cur_stream->msocks) {
-				HandleCallback(mtcp, MOS_NULL, walk, cur_stream->side,
-						   pctx, MOS_ON_ERROR);
-			} SOCKQ_FOREACH_END;
-			ret = tcprb_pwrite(rb, pctx->p.payload, pctx->p.payloadlen, off);
+
+		/* policy on the buffer outrun case
+		 * (1) has MOS_SOCK_MONITOR_STREAM_ACTIVE -> raise MOS_ON_ERROR first
+		 *                                           and then overwrite payload
+		 * (2) MOS_SOCK_STREAM only -> overwrite immediately
+		 */
+		if (HAS_STREAM_TYPE(cur_stream, MOS_SOCK_MONITOR_STREAM_ACTIVE)) {
+			int fflen = tcprb_fflen(rb, pctx->p.payload, pctx->p.payloadlen, off);
+			if (fflen > 0) {
+				/* if we detect buffer outrun, raise a MOS_ON_ERROR event. 
+				   then, the application can either consume read buffer data,
+				   or increase the read buffer size */
+				if (cur_stream->side == MOS_SIDE_CLI) {
+					SOCKQ_FOREACH_REVERSE(walk, &cur_stream->msocks) {					
+					if (walk->monitor_stream->peek_offset[cur_stream->side]
+						< rb->head + fflen)
+						HandleCallback(mtcp, MOS_NULL, walk, cur_stream->side,
+									   pctx, MOS_ON_ERROR);
+					} SOCKQ_FOREACH_END;
+				} else {
+					SOCKQ_FOREACH_START(walk, &cur_stream->msocks) {
+						if (walk->monitor_stream->peek_offset[cur_stream->side]
+							< rb->head + fflen)
+						HandleCallback(mtcp, MOS_NULL, walk, cur_stream->side,
+									   pctx, MOS_ON_ERROR);
+					} SOCKQ_FOREACH_END;
+				}
+			}
 		}
+		/* try writing packet payload to buffer */
+		ret = tcprb_pwrite(rb, pctx->p.payload, pctx->p.payloadlen, off);			
 	}
 	/* TODO: update monitor vars */
 
@@ -623,7 +655,7 @@ ProcessTCPPayload(mtcp_manager_t mtcp, tcp_stream *cur_stream,
 	 * message.
 	 */
 	if (ret < 0 && cur_stream->buffer_mgmt && mtcp->num_msp == 0)
-		TRACE_ERROR("Cannot merge payload. reason: %d\n", ret);
+		TRACE_ERROR("Cannot merge payload.\n");
 		
 	/* discard the buffer if the state is FIN_WAIT_1 or FIN_WAIT_2, 
 	   meaning that the connection is already closed by the application */
@@ -1046,7 +1078,7 @@ Handle_TCP_ST_FIN_WAIT_1 (mtcp_manager_t mtcp, tcp_stream* cur_stream,
 
 #else
 		if (cur_stream->sndvar->is_fin_sent &&
-			pctx->p.ack_seq == cur_stream->sndvar->fss + 1) {
+		    pctx->p.ack_seq == cur_stream->sndvar->fss + 1) {
 #endif
 			cur_stream->sndvar->snd_una = pctx->p.ack_seq;
 			if (TCP_SEQ_GT(pctx->p.ack_seq, cur_stream->snd_nxt)) {

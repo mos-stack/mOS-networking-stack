@@ -234,8 +234,12 @@ SendTCPPacketStandalone(struct mtcp_manager *mtcp,
 	/* callback for monitor raw socket */
 	TAILQ_FOREACH(walk, &mtcp->monitors, link)
 		if (walk->socket->socktype == MOS_SOCK_MONITOR_RAW)
-			HandleCallback(mtcp, MOS_NULL, walk->socket, MOS_SIDE_BOTH,
-				       &pctx, MOS_ON_PKT_IN);
+			if (ISSET_BPFFILTER(walk->raw_pkt_fcode) &&
+				EVAL_BPFFILTER(walk->raw_pkt_fcode, (uint8_t *)pctx.p.ethh,
+							   pctx.p.eth_len))
+				HandleCallback(mtcp, MOS_NULL, walk->socket, MOS_SIDE_BOTH,
+							   &pctx, MOS_ON_PKT_IN);
+
 	return payloadlen;
 }
 /*----------------------------------------------------------------------------*/
@@ -374,8 +378,11 @@ SendTCPPacket(struct mtcp_manager *mtcp, tcp_stream *cur_stream,
 	/* callback for monitor raw socket */
 	TAILQ_FOREACH(walk, &mtcp->monitors, link)
 		if (walk->socket->socktype == MOS_SOCK_MONITOR_RAW)
-			HandleCallback(mtcp, MOS_NULL, walk->socket, MOS_SIDE_BOTH,
-				       &pctx, MOS_ON_PKT_IN);
+			if (ISSET_BPFFILTER(walk->raw_pkt_fcode) &&
+				EVAL_BPFFILTER(walk->raw_pkt_fcode, (uint8_t *)pctx.p.ethh,
+							   pctx.p.eth_len))
+				HandleCallback(mtcp, MOS_NULL, walk->socket, MOS_SIDE_BOTH,
+							   &pctx, MOS_ON_PKT_IN);
 
 	if (mtcp->num_msp /* this means that stream monitor is on */) {
 		FillPacketContextTCPInfo(&pctx, tcph);
@@ -481,11 +488,11 @@ FlushTCPSendingBuffer(mtcp_manager_t mtcp, tcp_stream *cur_stream, uint32_t cur_
 					  sndvar->peer_wnd, seq - sndvar->snd_una);
 				if (!wack_sent && TS_TO_MSEC(cur_ts - sndvar->ts_lastack_sent) > 500) {
 					EnqueueACK(mtcp, cur_stream, cur_ts, ACK_OPT_WACK);
+					packets = -3;
+					goto out;
 				} else
 					wack_sent = 1;
 			}
-			packets = -3;
-			goto out;
 		}
 	
 		sndlen = SendTCPPacket(mtcp, cur_stream, cur_ts, 

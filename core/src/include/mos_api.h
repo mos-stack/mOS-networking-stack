@@ -527,28 +527,6 @@ int
 mtcp_setlastpkt(mctx_t mctx, int sock, int side, off_t offset,
 		byte *data, uint16_t datalen, int option);
 
-/** Drop current packet (don't forward it to the peer node)
- * @param [in] mctx: mtcp context
- *
- * This is useful for running callback-only applications
- * This function is now deprecated...
- */
-//int
-//mtcp_cb_dropcurpkt(mctx_t mctx);
-
-/* Reset the connection (send RST to both sides)
- * (This API will be updated after discussion.)
- */
-int
-mtcp_reset_conn(mctx_t mctx, int sock);
-
-int
-mtcp_set_debug_string(mtcp_manager_t mtcp, const char *fmt, ...);
-
-int
-mtcp_get_debug_string(mctx_t mctx, char *buf, int len);
-
-/**************************************************************************/
 /** Send a TCP packet of struct pkt_info
  * @param [in] mctx: mTCP/mOS context
  * @param [in] sock: monitoring stream socket id
@@ -559,7 +537,5 @@ mtcp_get_debug_string(mctx_t mctx, char *buf, int len);
  */ 
 int
 mtcp_sendpkt(mctx_t mctx, int sock, const struct pkt_info *pkt);
-
-/**************************************************************************/
 
 #endif /* __MOS_API_H_ */

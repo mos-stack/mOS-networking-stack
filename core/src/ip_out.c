@@ -99,12 +99,14 @@ ForwardIPPacket(mtcp_manager_t mtcp, struct pkt_ctx *pctx)
 		TRACE_ERROR("Failed to send a packet\n"
 				"NULL = EthernetOutput(%p, %d, %d, %p, %d)\n",
 				mtcp, ETH_P_IP, pctx->out_ifidx, haddr, pctx->p.ip_len);
+
 #ifdef PKTDUMP
 	DumpPacket(mtcp,
 			(char *)iph - sizeof(struct ethhdr),
 			pctx->p.ip_len + sizeof(struct ethhdr),
 			"OUT", pctx->out_ifidx);
 #endif
+
 }
 /*----------------------------------------------------------------------------*/
 inline void
