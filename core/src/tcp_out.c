@@ -488,11 +488,11 @@ FlushTCPSendingBuffer(mtcp_manager_t mtcp, tcp_stream *cur_stream, uint32_t cur_
 					  sndvar->peer_wnd, seq - sndvar->snd_una);
 				if (!wack_sent && TS_TO_MSEC(cur_ts - sndvar->ts_lastack_sent) > 500) {
 					EnqueueACK(mtcp, cur_stream, cur_ts, ACK_OPT_WACK);
-					packets = -3;
-					goto out;
 				} else
 					wack_sent = 1;
 			}
+			packets = -3;
+			goto out;
 		}
 	
 		sndlen = SendTCPPacket(mtcp, cur_stream, cur_ts, 
