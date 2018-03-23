@@ -571,12 +571,19 @@ dpdk_load_module_upper_half(void)
 	char mem_channels[5];
 
 	/* set the log level */
+#if 0
 	rte_set_log_type(RTE_LOGTYPE_PMD, 0);
 	rte_set_log_type(RTE_LOGTYPE_MALLOC, 0);
 	rte_set_log_type(RTE_LOGTYPE_MEMPOOL, 0);
 	rte_set_log_type(RTE_LOGTYPE_RING, 0);
 	rte_set_log_level(RTE_LOG_WARNING);
-	
+#else
+	rte_log_set_level(RTE_LOGTYPE_PMD, 0);
+	rte_log_set_level(RTE_LOGTYPE_MALLOC, 0);
+	rte_log_set_level(RTE_LOGTYPE_MEMPOOL, 0);
+	rte_log_set_level(RTE_LOGTYPE_RING, 0);
+	rte_log_set_level(RTE_LOG_WARNING, 0);
+#endif	
 	/* get the cpu mask */
 	for (ret = 0; ret < cpu; ret++)
 		cpumask = (cpumask | (1 << ret));

@@ -447,14 +447,14 @@ set_numa_pages()
 bind_nics_to_igb_uio()
 {
     if  /sbin/lsmod  | grep -q igb_uio ; then
-	${RTE_SDK}/tools/dpdk-devbind.py --status
+	${RTE_SDK}/usertools/dpdk-devbind.py --status
 	echo ""
 	echo "Enter PCI address of device(s) to bind to IGB UIO driver (e.g., \"04:00.0 04:00.1\")."
 	echo -n "> "
 	read PCI_PATH
 
 
-	sudo ${RTE_SDK}/tools/dpdk-devbind.py -b igb_uio $PCI_PATH && echo "OK"
+	sudo ${RTE_SDK}/usertools/dpdk-devbind.py -b igb_uio $PCI_PATH && echo "OK"
     else
 	echo "# Please load the 'igb_uio' kernel module before querying or "
 	echo "# adjusting NIC device bindings"
@@ -475,14 +475,14 @@ unbind_nics()
 	fi
     done
 
-    ${RTE_SDK}/tools/dpdk-devbind.py --status
+    ${RTE_SDK}/usertools/dpdk-devbind.py --status
     echo ""
     echo -n "Enter PCI address of device to unbind: "
     read PCI_PATH
     echo ""
     echo -n "Enter name of kernel driver to bind the device to: "
     read DRV
-    sudo ${RTE_SDK}/tools/dpdk-devbind.py -b $DRV $PCI_PATH && echo "OK"
+    sudo ${RTE_SDK}/usertools/dpdk-devbind.py -b $DRV $PCI_PATH && echo "OK"
 }
 
 # Brings up the interface of DPDK devices up
@@ -635,7 +635,7 @@ if [ "$1" == "--compile-dpdk" ]; then
     fi
     # Build and install DPDK library
     export DPDK_DIR="drivers/dpdk"
-    export RTE_SDK="drivers/dpdk-16.11"
+    export RTE_SDK="drivers/dpdk-17.08"
     export RTE_TARGET="x86_64-native-linuxapp-gcc"
     export DESTDIR="."
     echo
@@ -661,7 +661,7 @@ elif [ "$1" == "--compile-netmap" ]; then
 
 elif [ "$1" == "--run-dpdk" ]; then
     export DPDK_DIR="drivers/dpdk"
-    export RTE_SDK="drivers/dpdk-16.11"
+    export RTE_SDK="drivers/dpdk-17.08"
     export RTE_TARGET="x86_64-native-linuxapp-gcc"
     while [ 1 ]; do
 	clear
@@ -731,7 +731,7 @@ elif [ "$1" == "--cleanup" ]; then
     rm -rf *.o
     cd ..
     rm -rf .*.d
-    rm Makefile
+    rm -f Makefile
     cd ../..
     find ./samples/ -name 'Makefile' | xargs rm -f
     rm -f scripts/config.log scripts/config.status
