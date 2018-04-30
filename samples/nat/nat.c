@@ -60,7 +60,7 @@ assign_port(mctx_t mctx, int sock)
 {
 	struct port *w;
 	struct sockaddr_in addr[2];
-	socklen_t len = sizeof(addr) * 2;
+	socklen_t len = sizeof(struct sockaddr_in) * 2;
 
 	/* remove a NAT mapping for this connection */
 	if (mtcp_getpeername(mctx, sock, (struct sockaddr *)&addr, &len,
@@ -137,7 +137,7 @@ translate_addr(mctx_t mctx, int sock, int side, uint64_t events,
 	} else /* if (side == MOS_SIDE_SVR) */ {
 		/* SVR (WAN) ==> CLI (LAN) : DNAT */
 		struct sockaddr_in addr[2];
-		socklen_t len = sizeof(addr) * 2;
+		socklen_t len = sizeof(struct sockaddr_in) * 2;
 
 		if (mtcp_getpeername(mctx, sock, (struct sockaddr *)&addr, &len,
 					MOS_SIDE_BOTH) < 0) {
