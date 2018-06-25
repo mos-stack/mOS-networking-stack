@@ -104,20 +104,27 @@ GetRSSHash(in_addr_t sip, in_addr_t dip, in_port_t sp, in_port_t dp)
 /* val: 3 2 1 0 | 7 6 5 4 | 11 10 9 8 | 15 14 13 12 | 19 18 17 16 ...*/
 /* qid = val % num_queues */
 /*-------------------------------------------------------------------*/
+/*
+ * ixgbe (e.g., X520) : (Rx queue #) = (7 LS bits of RSS hash) mod N
+ * i40e (e.g., XL710) : (Rx queue #) = (9 LS bits of RSS hash) mod N
+ */
+/*-------------------------------------------------------------------*/
+#define RSS_BIT_MASK_IXGBE 0x0000007F
+#define RSS_BIT_MASK_I40E  0x000001FF	
 int
 GetRSSCPUCore(in_addr_t sip, in_addr_t dip, 
-	      in_port_t sp, in_port_t dp, int num_queues/*,
-							  int endian_type*/)
+			  in_port_t sp, in_port_t dp, int num_queues)
 {
-	#define RSS_BIT_MASK 0x0000007F
-
-	uint32_t masked = GetRSSHash(sip, dip, sp, dp) & RSS_BIT_MASK;
+	uint32_t masked;
 	int endian_type = FetchEndianType();
 
 	if (endian_type) {
+		masked = GetRSSHash(sip, dip, sp, dp) & RSS_BIT_MASK_I40E;
 		static const uint32_t off[4] = {3, 1, -1, -3};
 		masked += off[masked & 0x3];
 	}
+	else
+		masked = GetRSSHash(sip, dip, sp, dp) & RSS_BIT_MASK_IXGBE;	
 
 	return (masked % num_queues);
 
