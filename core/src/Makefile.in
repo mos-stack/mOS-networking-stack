@@ -1,6 +1,7 @@
 
 .PHONY: clean
 
+SHELL := /bin/bash
 DISABLE_NUMA=@NONUMA@
 ENABLE_DPDK=@DPDK@
 ENABLE_PCAP=@PCAP@
@@ -100,12 +101,15 @@ default: $(OBJS)
 	$(MSG) "   AR $(MTCP_LIB)"
 	$(HIDE) ar rvs $(MTCP_LIB_DIR)/$(MTCP_LIB) $(OBJS)
 
-$(OBJS): %.o: %.c Makefile
+$(OBJS): %.o: %.c Makefile calcCPUs
 	$(MSG) "   CC $<"
 	$(HIDE) $(GCC) $(GCC_OPT) $(INC) -c $< -o $@
 $(DEPS): .%.d: %.c Makefile
 	@mkdir -p .bpf
 	$(HIDE) $(GCC) $(GCC_OPT) $(INC) -MM $(CFLAGS) $< > $@
+
+calcCPUs:
+	$(eval export GCC_OPT := $(GCC_OPT) -DMAX_CPUS=$(shell let cpus=`lscpu | grep "Core(s) per socket" | awk '{print \$$4}'`*`lscpu | grep "Socket(s)" | awk '{print \$$2}'`; echo $$cpus))
 
 -include $(DEPS)
 

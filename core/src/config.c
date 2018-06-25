@@ -1122,11 +1122,25 @@ ParseBlock(struct conf_block *blk)
 void
 PatchCONFIG(struct config *config)
 {
-	int i;
+	int i, count;
 	char *word, *str, *end;
-	int wlen;
+	int wlen;	
+	uint64_t value;
 
-	g_config.mos->num_cores = num_cpus;
+	value = g_config.mos->cpu_mask;
+	for (count = 0; value != 0; count++, value &= value-1);
+	if (count > num_cpus) {
+		TRACE_ERROR("CPU mask (%016lX) exceeds the number of CPU cores (%d)\n",
+					g_config.mos->cpu_mask, num_cpus);
+		exit(-1);
+	}
+	if (count > MAX_CPUS) {
+		TRACE_ERROR("mOS does not support more than %d CPU cores for now\n",
+					MAX_CPUS);
+		exit(-1);
+	}
+	g_config.mos->num_cores = count;
+	
 	word = NULL;
 
 	i = 0;
