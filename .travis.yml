@@ -41,6 +41,8 @@ install:
   - sudo apt-get install libnuma-dev libpcap-dev
 
 script:
+  - export RTE_SDK=`echo $PWD`/drivers/dpdk
+  - export RTE_TARGET=x86_64-native-linuxapp-gcc
   - echo | ./setup.sh --compile-dpdk
   - make -f scripts/Makefile.test
   - ./setup.sh --compile-netmap
