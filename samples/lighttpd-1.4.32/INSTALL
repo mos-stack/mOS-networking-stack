@@ -49,12 +49,12 @@ Configure the program with the following arguments:
 
   $ ./configure --without-bzip2 CFLAGS="-O3" \
     --with-libmtcp=${PATH_TO_LIBMOS} \
-    --with-libdpdk=${PATH_TO_LIBDPDK} LIBS="-lpcap"
+    --with-libdpdk=${PATH_TO_LIBDPDK}
     
   (e.g.
 	$ ./configure --without-bzip2 CFLAGS="-g -O3" \
 	--with-libmtcp="<$PATH_TO_MOS>/core" \
-	--with-libdpdk="<$PATH_TO_MOS>/dpdk/" LIBS="-lpcap"
+	--with-libdpdk=$RTE_SDK/$RTE_TARGET
   )
 
 The path should be absolute.
@@ -62,12 +62,12 @@ The path should be absolute.
   ## For debugging
   $ ./configure --without-bzip2 CFLAGS="-g -DINFO -DDBGERR" \
     --with-libmtcp=${PATH_TO_LIBMOS} \
-    --with-libdpdk=${PATH_TO_LIBDPDK} LIBS="-lpcap"
+    --with-libdpdk=${PATH_TO_LIBDPDK}
 
   (e.g.
 	$ ./configure --without-bzip2 CFLAGS="-g -DINFO -DDBGERR" \
 	--with-libmtcp="<$PATH_TO_MOS>/core/" \
-	--with-libdpdk="<$PATH_TO_MOS>/dpdk/" LIBS="-lpcap"
+	--with-libdpdk=$RTE_SDK/$RTE_TARGET
   )
 
 Please remember to adjust lighttpd.conf file carefully.

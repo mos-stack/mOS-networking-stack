@@ -1,6 +1,10 @@
 #! /bin/bash
 
 ############################ Common Utilities ################################
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
 FL_PCAP=1
 FL_DPDK=2
 FL_NETMAP=3
@@ -223,7 +227,7 @@ create_makefile()
 	if [ -f $CUR_DIR/samples/$d/Makefile.in ]; then						
 	    cp $CUR_DIR/samples/$d/Makefile.in $CUR_DIR/samples/$d/Makefile
 	    if [[ $1 == $FL_DPDK ]]; then
-		FMT=$(printf 's/__IO_LIB_ARGS/LIBS    += -m64 -g -pthread -lrt -march=native -Wl,-export-dynamic -L..\/..\/drivers\/dpdk\/lib -Wl,-lnuma -Wl,-lmtcp -Wl,-lpthread -Wl,-lrt -Wl,-ldl -Wl,$(shell cat ..\/..\/drivers\/dpdk\/lib\/ldflags.txt)/g')
+		FMT=$(printf 's/__IO_LIB_ARGS/LIBS    += -m64 -g -pthread -lrt -march=native -Wl,-export-dynamic -L\$(RTE_SDK)\/\$(RTE_TARGET)\/lib -Wl,-lnuma -Wl,-lmtcp -Wl,-lpthread -Wl,-lrt -Wl,-ldl -Wl,$(shell cat \$(RTE_SDK)\/\$(RTE_TARGET)\/lib\/ldflags.txt)/g')
 	    elif [[ $1 == $FL_PCAP ]]; then
 		FMT=$(printf 's/__IO_LIB_ARGS/GCC_OPT += -D__thread="" -DBE_RESILIENT_TO_PACKET_DROP\\nINC += -DENABLE_PCAP\\nLIBS += -lpcap/g')
 	    elif [[ $1 == $FL_NETMAP ]]; then
@@ -240,11 +244,6 @@ setup_mos_library() {
     cd $CUR_DIR
 
     if [[ $1 == $FL_DPDK ]]; then
-	mkdir -p $DPDK_DIR
-	rmdir $DPDK_DIR/include $DPDK_DIR/lib 2> /dev/null
-	rm $DPDK_DIR/include $DPDK_DIR/lib 2> /dev/null
-	ln -s $CUR_DIR/$RTE_SDK/$RTE_TARGET/include $DPDK_DIR/include
-	ln -s $CUR_DIR/$RTE_SDK/$RTE_TARGET/lib $DPDK_DIR/lib
     	cd $CUR_DIR/scripts/
 	./configure --enable-dpdk
     elif [[ $1 == $FL_PCAP ]]; then
@@ -302,6 +301,11 @@ remove_igb_uio_module()
     if [ $? -eq 0 ] ; then
 	sudo /sbin/rmmod igb_uio
     fi
+
+    /sbin/lsmod | grep -s dpdk_iface > /dev/null
+    if [ $? -eq 0 ] ; then
+	sudo /sbin/rmmod dpdk_iface.ko
+    fi
 }
 
 # Loads new igb_uio.ko (and uio module if needed).
@@ -313,24 +317,26 @@ load_igb_uio_module()
 	return
     fi
 
-    remove_igb_uio_module
-
-    /sbin/lsmod | grep -s uio > /dev/null
-    if [ $? -ne 0 ] ; then
-	modinfo uio > /dev/null
-	if [ $? -eq 0 ]; then
-	    echo "Loading uio module"
-	    sudo /sbin/modprobe uio
+    if lsmod | grep igb_uio &> /dev/null ; then
+	:
+    else
+	/sbin/lsmod | grep -s uio > /dev/null
+	if [ $? -ne 0 ] ; then
+	    modinfo uio > /dev/null
+	    if [ $? -eq 0 ]; then
+		echo "Loading uio module"
+		sudo /sbin/modprobe uio
+	    fi
 	fi
-    fi
-
-    # UIO may be compiled into kernel, so it may not be an error if it can't
-    # be loaded.
-    echo "Loading DPDK UIO module"
-    sudo /sbin/insmod $RTE_SDK/$RTE_TARGET/kmod/igb_uio.ko
-    if [ $? -ne 0 ] ; then
-	echo "## ERROR: Could not load kmod/igb_uio.ko."
-	quit
+	
+	# UIO may be compiled into kernel, so it may not be an error if it can't
+	# be loaded.
+	echo "Loading DPDK UIO module"
+	sudo /sbin/insmod $RTE_SDK/$RTE_TARGET/kmod/igb_uio.ko
+	if [ $? -ne 0 ] ; then
+	    echo "## ERROR: Could not load kmod/igb_uio.ko."
+	    quit
+	fi
     fi
 }
 
@@ -459,6 +465,18 @@ bind_nics_to_igb_uio()
 	echo "# Please load the 'igb_uio' kernel module before querying or "
 	echo "# adjusting NIC device bindings"
     fi
+
+    # Create interfaces
+    printf "Creating ${GREEN}dpdk$NC interface entries\n"
+    cd dpdk-iface-kmod
+    make
+    if lsmod | grep dpdk_iface &> /dev/null ; then
+	:
+    else
+	sudo insmod ./dpdk_iface.ko
+    fi
+    sudo -E make run
+    cd ..
 }
 
 #
@@ -557,7 +575,7 @@ step1_func_dpdk()
 step2_func_dpdk()
 {
     load_igb_uio_module
-    bind_nics_to_igb_uio    
+    bind_nics_to_igb_uio
 }
 step3_func_dpdk()
 {
@@ -623,20 +641,46 @@ step0_func_netmap()
 #############################################################################
 
 ############################# Main Script ###################################
+# Get to script directory
+cd $(dirname ${BASH_SOURCE[0]})/
 export CUR_DIR=$PWD
 kerver=$(uname -r)
 
 if [ "$1" == "--compile-dpdk" ]; then
+    # check if RTE_SDK and RTE_TARGET env variables exist
+    if [[ -z "${RTE_SDK}" ]]; then
+	printf "${RED}Please define RTE_SDK env variable first\n $NC"
+	exit 1
+    fi
+    if [[ -z "${RTE_TARGET}" ]]; then
+	printf "${RED}Please define RTE_TARGET env variable first\n $NC"
+	exit 1
+    fi
+
+    # First download dpdk
+    if [ -z "$(ls -A $PWD/drivers/dpdk)" ]; then
+	cd drivers
+	printf "${GREEN}Cloning dpdk...\n $NC"
+	git submodule init
+	git submodule update
+	cd ..
+    fi
+    
     vercomp $kerver "2.6.33"
     # if kernel version < 2.6.33
     if [ "$?" == "2" ]; then
 	echo "[note] current kerner version ("$kerver") does not support DPDK"
 	exit 1
     fi
+
+    if grep "ldflags.txt" $RTE_SDK/mk/rte.app.mk > /dev/null
+    then
+	:
+    else
+	sed -i -e 's/O_TO_EXE_STR =/\$(shell if [ \! -d \${RTE_SDK}\/\${RTE_TARGET}\/lib ]\; then mkdir \${RTE_SDK}\/\${RTE_TARGET}\/lib\; fi)\nLINKER_FLAGS = \$(call linkerprefix,\$(LDLIBS))\n\$(shell echo \${LINKER_FLAGS} \> \${RTE_SDK}\/\${RTE_TARGET}\/lib\/ldflags\.txt)\nO_TO_EXE_STR =/g' $RTE_SDK/mk/rte.app.mk
+    fi
+    
     # Build and install DPDK library
-    export DPDK_DIR="drivers/dpdk"
-    export RTE_SDK="drivers/dpdk-17.08"
-    export RTE_TARGET="x86_64-native-linuxapp-gcc"
     export DESTDIR="."
     echo
     echo "Selected DPDK library to be used for MOS"
@@ -660,9 +704,16 @@ elif [ "$1" == "--compile-netmap" ]; then
     setup_mos_library $FL_NETMAP
 
 elif [ "$1" == "--run-dpdk" ]; then
-    export DPDK_DIR="drivers/dpdk"
-    export RTE_SDK="drivers/dpdk-17.08"
-    export RTE_TARGET="x86_64-native-linuxapp-gcc"
+    # check if RTE_SDK and RTE_TARGET env variables exist
+    if [[ -z "${RTE_SDK}" ]]; then
+	printf "${RED}Please define RTE_SDK env variable first\n $NC"
+	exit 1
+    fi
+    if [[ -z "${RTE_TARGET}" ]]; then
+	printf "${RED}Please define RTE_TARGET env variable first\n $NC"
+	exit 1
+    fi
+    
     while [ 1 ]; do
 	clear
 	echo
@@ -718,6 +769,8 @@ elif [ "$1" == "--run-netmap" ]; then
 elif [ "$1" == "--cleanup" ]; then
     find | grep mos.conf | xargs rm -f
     find | grep log__* | xargs rm -f
+    find | grep mos-master.conf | xargs rm -f
+    find | grep mos-slave.conf | xargs rm -f
 
     for d in $CUR_DIR/samples/* ; do
 	cd $d
@@ -735,6 +788,9 @@ elif [ "$1" == "--cleanup" ]; then
     cd ../..
     find ./samples/ -name 'Makefile' | xargs rm -f
     rm -f scripts/config.log scripts/config.status
+    cd dpdk-iface-kmod/
+    make clean
+    cd ..
 else
     echo "[error] please specify one of the following options"
     echo "--compile-dpdk   : compile and build mOS library with dpdk"

@@ -51,11 +51,11 @@ endif
 
 ifeq ($(ENABLE_DPDK), 1)
 # DPDK LIBRARY and HEADER
-DPDK_INC=../../drivers/dpdk/include
-DPDK_LIB=../../drivers/dpdk/lib/
+DPDK_INC=$(RTE_SDK)/$(RTE_TARGET)/include
+DPDK_LIB=$(RTE_SDK)/$(RTE_TARGET)/lib/
 # CFLAGS for DPDK-related compilation
-DPDK_MACHINE_FLAGS = $(shell cat $(DPDK_INC)/cflags.txt)
-INC += -DENABLE_DPDK ${DPDK_MACHINE_FLAGS} -I${DPDK_INC} -include $(DPDK_INC)/rte_config.h
+include $(RTE_SDK)/mk/rte.vars.mk
+INC += -DENABLE_DPDK -I${DPDK_INC} -include $(DPDK_INC)/rte_config.h
 LIBS += -export-dynamic -L$(DPDK_LIB)
 endif
 
@@ -103,7 +103,7 @@ default: $(OBJS)
 
 $(OBJS): %.o: %.c Makefile calcCPUs
 	$(MSG) "   CC $<"
-	$(HIDE) $(GCC) $(GCC_OPT) $(INC) -c $< -o $@
+	$(HIDE) $(GCC) $(GCC_OPT) $(INC) $(CFLAGS) -c $< -o $@
 $(DEPS): .%.d: %.c Makefile
 	@mkdir -p .bpf
 	$(HIDE) $(GCC) $(GCC_OPT) $(INC) -MM $(CFLAGS) $< > $@
