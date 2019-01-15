@@ -25,6 +25,8 @@
 /* for ioctl */
 #include <sys/ioctl.h>
 #endif /* !ENABLE_STATS_IOCTL */
+/* for retrieving rte version(s) */
+#include <rte_version.h>
 /*----------------------------------------------------------------------------*/
 /* Essential macros */
 #define MAX_RX_QUEUE_PER_LCORE		MAX_CPUS
@@ -84,11 +86,15 @@ static struct rte_eth_conf port_conf = {
 		.mq_mode	= 	ETH_MQ_RX_RSS,
 		.max_rx_pkt_len = 	ETHER_MAX_LEN,
 		.split_hdr_size = 	0,
+#if (RTE_VER_YEAR <= 18) && (RTE_VER_MONTH <= 02)
 		.header_split   = 	0, /**< Header Split disabled */
 		.hw_ip_checksum = 	1, /**< IP checksum offload enabled */
 		.hw_vlan_filter = 	0, /**< VLAN filtering disabled */
 		.jumbo_frame    = 	0, /**< Jumbo Frame Support disabled */
 		.hw_strip_crc   = 	1, /**< CRC stripped by hardware */
+#else
+		.offloads	=	DEV_RX_OFFLOAD_CHECKSUM,
+#endif
 	},
 	.rx_adv_conf = {
 		.rss_conf = {
@@ -99,6 +105,11 @@ static struct rte_eth_conf port_conf = {
 	},
 	.txmode = {
 		.mq_mode = 		ETH_MQ_TX_NONE,
+#if (RTE_VER_YEAR >= 18) && (RTE_VER_MONTH > 02)
+		.offloads	=	DEV_TX_OFFLOAD_IPV4_CKSUM |
+					DEV_TX_OFFLOAD_UDP_CKSUM |
+					DEV_TX_OFFLOAD_TCP_CKSUM
+#endif
 	},
 };
 
@@ -119,11 +130,13 @@ static const struct rte_eth_txconf tx_conf = {
 	},
 	.tx_free_thresh = 		0, /* Use PMD default values */
 	.tx_rs_thresh = 		0, /* Use PMD default values */
+#if (RTE_VER_YEAR <= 18) && (RTE_VER_MONTH <= 02)
 	/*
 	 * As the example won't handle mult-segments and offload cases,
 	 * set the flag by default.
 	 */
 	.txq_flags = 			0x0,
+#endif
 };
 
 struct mbuf_table {
@@ -410,7 +423,11 @@ dpdk_get_nif(struct ifreq *ifr)
 	static struct ether_addr ports_eth_addr[RTE_MAX_ETHPORTS];
 	/* get mac addr entries of 'detected' dpdk ports */
 	if (num_dev < 0) {
+#if (RTE_VER_YEAR <= 18) && (RTE_VER_MONTH <= 02)
 		num_dev = rte_eth_dev_count();
+#else
+		num_dev = rte_eth_dev_count_avail();
+#endif
 		for (i = 0; i < num_dev; i++)
 			rte_eth_macaddr_get(i, &ports_eth_addr[i]);
 	}
@@ -676,6 +693,13 @@ dpdk_load_module_lower_half(void)
 				if (g_config.mos->netdev_table->ent[eth_idx]->cpu_mask & (1L << i))
 					num_queue++;
 			
+			/* check port capabilities */
+			rte_eth_dev_info_get(portid, &dev_info[portid]);
+
+#if (RTE_VER_YEAR >= 18) && (RTE_VER_MONTH > 02)
+			/* re-adjust rss_hf */
+			port_conf.rx_adv_conf.rss_conf.rss_hf &= dev_info[portid].flow_type_rss_offloads;
+#endif
 			/* set 'num_queues' (used for GetRSSCPUCore() in util.c) */
 			num_queues = num_queue;
 			
@@ -694,9 +718,6 @@ dpdk_load_module_lower_half(void)
 #ifdef DEBUG
 			rte_eth_macaddr_get(portid, &ports_eth_addr[portid]);
 #endif
-			/* check port capabilities */
-			rte_eth_dev_info_get(portid, &dev_info[portid]);
-
 			queue_id = 0;
 			for (rxlcore_id = 0; rxlcore_id < g_config.mos->num_cores; rxlcore_id++) {
 				if (!(g_config.mos->netdev_table->ent[eth_idx]->cpu_mask & (1L << rxlcore_id)))
