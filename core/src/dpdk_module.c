@@ -105,7 +105,7 @@ static struct rte_eth_conf port_conf = {
 	},
 	.txmode = {
 		.mq_mode = 		ETH_MQ_TX_NONE,
-#if (RTE_VER_YEAR >= 18) && (RTE_VER_MONTH > 02)
+#if (RTE_VER_YEAR >= 18) && (RTE_VER_MONTH >= 02)
 		.offloads	=	DEV_TX_OFFLOAD_IPV4_CKSUM |
 					DEV_TX_OFFLOAD_UDP_CKSUM |
 					DEV_TX_OFFLOAD_TCP_CKSUM
@@ -696,7 +696,7 @@ dpdk_load_module_lower_half(void)
 			/* check port capabilities */
 			rte_eth_dev_info_get(portid, &dev_info[portid]);
 
-#if (RTE_VER_YEAR >= 18) && (RTE_VER_MONTH > 02)
+#if (RTE_VER_YEAR >= 18) && (RTE_VER_MONTH >= 02)
 			/* re-adjust rss_hf */
 			port_conf.rx_adv_conf.rss_conf.rss_hf &= dev_info[portid].flow_type_rss_offloads;
 #endif
