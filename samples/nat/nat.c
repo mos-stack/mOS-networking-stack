@@ -71,7 +71,7 @@ assign_port(mctx_t mctx, int sock)
 	/* assign a port number */
 	pthread_mutex_lock(&g_addrlock);
 	TAILQ_FOREACH(w, &g_free_addrs, link)
-		if (GetRSSCPUCore(g_NATIP, addr[MOS_SIDE_SVR].sin_addr.s_addr,
+		if (g_core_limit == 1 || GetRSSCPUCore(g_NATIP, addr[MOS_SIDE_SVR].sin_addr.s_addr,
 				  w->port, addr[MOS_SIDE_SVR].sin_port, g_core_limit)
 			 == mctx->cpu)
 			break;
