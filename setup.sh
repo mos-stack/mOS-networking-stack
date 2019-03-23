@@ -506,11 +506,6 @@ unbind_nics()
 # Brings up the interface of DPDK devices up
 setup_iface_dpdk()
 {
-    # Create & configure /dev/dpdk-iface
-    sudo rm -rf /dev/dpdk-iface
-    sudo mknod /dev/dpdk-iface c 1110 0
-    sudo chmod 666 /dev/dpdk-iface
-    
     # First check whether igb_uio module is already loaded
     MODULE="igb_uio"
     

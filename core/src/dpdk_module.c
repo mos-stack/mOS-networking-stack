@@ -588,7 +588,7 @@ dpdk_load_module_upper_half(void)
 	char mem_channels[5];
 
 	/* set the log level */
-#if 0
+#if RTE_VERSION < RTE_VERSION_NUM(17, 5, 0, 0)
 	rte_set_log_type(RTE_LOGTYPE_PMD, 0);
 	rte_set_log_type(RTE_LOGTYPE_MALLOC, 0);
 	rte_set_log_type(RTE_LOGTYPE_MEMPOOL, 0);
@@ -658,7 +658,7 @@ dpdk_load_module_lower_half(void)
 		0x05, 0x05
 	};
 
-	port_conf.rx_adv_conf.rss_conf.rss_key = (uint8_t *)&key;
+	port_conf.rx_adv_conf.rss_conf.rss_key = (uint8_t *)key;
 	port_conf.rx_adv_conf.rss_conf.rss_key_len = sizeof(key);
 
 	/* resetting cpu_qid mapping */
