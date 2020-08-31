@@ -124,7 +124,7 @@ LoadConfig(char *file_name, struct conf_var *vlist, int size)
 			if ((len = strlen(p)) > CONF_VALUE_LEN)
 				break;
 
-			strncpy(vlist[i].value, p, len);
+			memcpy(vlist[i].value, p, len);
 			vlist[i].value[len] = '\0';
 		}
 	}
