@@ -658,9 +658,6 @@ dpdk_load_module_lower_half(void)
 		0x05, 0x05
 	};
 
-	port_conf.rx_adv_conf.rss_conf.rss_key = (uint8_t *)key;
-	port_conf.rx_adv_conf.rss_conf.rss_key_len = sizeof(key);
-
 	/* resetting cpu_qid mapping */
 	memset(cpu_qid_map, 0xFF, sizeof(cpu_qid_map));
 
@@ -695,6 +692,13 @@ dpdk_load_module_lower_half(void)
 			
 			/* check port capabilities */
 			rte_eth_dev_info_get(portid, &dev_info[portid]);
+
+
+            port_conf.rx_adv_conf.rss_conf.rss_key = (uint8_t *)&key;
+            port_conf.rx_adv_conf.rss_conf.rss_key_len = sizeof(key);
+            if (port_conf.rx_adv_conf.rss_conf.rss_key_len > dev_info[portid].hash_key_size)
+                port_conf.rx_adv_conf.rss_conf.rss_key_len = dev_info[portid].hash_key_size;
+
 
 #if RTE_VERSION >= RTE_VERSION_NUM(18, 2, 0, 0)
 			/* re-adjust rss_hf */
