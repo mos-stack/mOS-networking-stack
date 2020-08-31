@@ -41,6 +41,7 @@ struct connection {
 int g_max_cores;                              /* Number of CPU cores to be used */
 mctx_t g_mctx[MAX_CORES];                     /* mOS context */
 TAILQ_HEAD(, connection) g_sockq[MAX_CORES];  /* connection queue */
+bool quiet = true;                            /* do not print stats */
 /*----------------------------------------------------------------------------*/
 /* Signal handler */
 static void
@@ -223,7 +224,7 @@ RegisterCallbacks(mctx_t mctx, int sock, event_t ev_new_syn)
 	}	
 
 	/* CPU 0 is in charge of printing stats */
-	if (mctx->cpu == 0 &&
+	if (!quiet && mctx->cpu == 0 &&
 		mtcp_settimer(mctx, sock, &tv_1sec, cb_printstat)) {
 		fprintf(stderr, "Failed to register print timer\n");
 		exit(-1); /* no point in proceeding if the titmer is broken*/
@@ -272,11 +273,14 @@ main(int argc, char **argv)
 	g_max_cores = GetNumCPUs();       
 
 	/* Parse command line arguments */
-	while ((opt = getopt(argc, argv, "c:f:")) != -1) {
+	while ((opt = getopt(argc, argv, "c:f:q")) != -1) {
 		switch (opt) {
 		case 'f':
 			fname = optarg;
 			break;
+        case 'q':
+            quiet = true;
+            break;
 		case 'c':
 			if (atoi(optarg) > g_max_cores) {
 				printf("Available number of CPU cores is %d\n", g_max_cores);
@@ -285,7 +289,7 @@ main(int argc, char **argv)
 			g_max_cores = atoi(optarg);
 			break;
 		default:
-			printf("Usage: %s [-f mos_config_file] [-c #_of_cpu]\n", argv[0]);
+			printf("Usage: %s [-f mos_config_file] [-c #_of_cpu] [-q]\n", argv[0]);
 			return 0;
 		}
 	}
